@@ -1,0 +1,35 @@
+[
+  {
+    "_id": "64fa1e1b0000000000000011",
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "genres": ["Fantasy", "Adventure"],
+    "publishedYear": 1937,
+    "isbn": "9780007458424",
+    "description": "A fantasy novel about Bilbo Baggins' adventure.",
+    "coverUrl": "https://th.bing.com/th/id/R.4e8dabf9482131befdb4f6ac807a37ef?rik=7r0yCatxAKZthg&pid=ImgRaw&r=0",
+    "addedBy": "64fa1e1b0000000000000001"
+  },
+  {
+    "_id": "64fa1e1b0000000000000012",
+    "title": "Murder on the Orient Express",
+    "author": "Agatha Christie",
+    "genres": ["Mystery", "Crime"],
+    "publishedYear": 1934,
+    "isbn": "9780007119310",
+    "description": "Detective Hercule Poirot solves a murder.",
+    "coverUrl": "https://i.harperapps.com/hcanz/covers/9780008249434/y648.jpg",
+    "addedBy": "64fa1e1b0000000000000002"
+  },
+  {
+    "_id": "64fa1e1b0000000000000013",
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "genres": ["Romance", "Drama"],
+    "publishedYear": 1813,
+    "isbn": "9780141439518",
+    "description": "A classic love story.",
+    "coverUrl": "https://m.media-amazon.com/images/M/MV5BMTA1NDQ3NTcyOTNeQTJeQWpwZ15BbWU3MDA0MzA4MzE@._V1_.jpg",
+    "addedBy": "64fa1e1b0000000000000003"
+  }
+]

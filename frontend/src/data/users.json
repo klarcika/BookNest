@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "64fa1e1b0000000000000001",
+    "username": "barbara123",
+    "email": "barbara@example.com",
+    "passwordHash": "hashedpassword1",
+    "preferences": { "genres": ["Fantasy", "Sci-Fi"], "language": "sl" },
+    "profile": { "name": "Barbara Ferlinc", "avatarUrl": "", "bio": "Rada berem domišljijske knjige." }
+  },
+  {
+    "_id": "64fa1e1b0000000000000002",
+    "username": "vivien_s",
+    "email": "vivien@example.com",
+    "passwordHash": "hashedpassword2",
+    "preferences": { "genres": ["Mystery"], "language": "en" },
+    "profile": { "name": "Vivien Štampfer", "avatarUrl": "", "bio": "Kriminalke so top!" }
+  },
+  {
+    "_id": "64fa1e1b0000000000000003",
+    "username": "klara.k",
+    "email": "klara@example.com",
+    "passwordHash": "hashedpassword3",
+    "preferences": { "genres": ["Romance", "Drama"], "language": "de" },
+    "profile": { "name": "Klara Kirbiš", "avatarUrl": "", "bio": "Uživam v klasičnih romanih." }
+  }
+]

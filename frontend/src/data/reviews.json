@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "64fa1e1b0000000000000101",
+    "userId": "64fa1e1b0000000000000001",
+    "bookId": "64fa1e1b0000000000000011",
+    "rating": 5,
+    "review": "Odlična knjiga, polna domišljije!",
+    "createdAt": "2025-08-01T14:00:00Z"
+  },
+  {
+    "_id": "64fa1e1b0000000000000102",
+    "userId": "64fa1e1b0000000000000002",
+    "bookId": "64fa1e1b0000000000000012",
+    "rating": 4,
+    "review": "Zelo napeto branje.",
+    "createdAt": "2025-08-02T10:00:00Z"
+  }
+]

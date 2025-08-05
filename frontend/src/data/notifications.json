@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "64fa1e1b0000000000000401",
+    "userId": "64fa1e1b0000000000000001",
+    "type": "due_soon",
+    "message": "Vaša knjiga 'The Hobbit' poteče kmalu!",
+    "isRead": false,
+    "createdAt": "2025-08-04T18:00:00Z"
+  },
+  {
+    "_id": "64fa1e1b0000000000000402",
+    "userId": "64fa1e1b0000000000000003",
+    "type": "new_book",
+    "message": "Dodana je nova knjiga: 'Pride and Prejudice'",
+    "isRead": false,
+    "createdAt": "2025-08-04T19:00:00Z"
+  }
+]
