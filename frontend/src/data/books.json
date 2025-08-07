@@ -7,8 +7,7 @@
     "publishedYear": 1937,
     "isbn": "9780007458424",
     "description": "A fantasy novel about Bilbo Baggins' adventure.",
-    "coverUrl": "https://th.bing.com/th/id/R.4e8dabf9482131befdb4f6ac807a37ef?rik=7r0yCatxAKZthg&pid=ImgRaw&r=0",
-    "addedBy": "64fa1e1b0000000000000001"
+    "coverUrl": "https://th.bing.com/th/id/R.4e8dabf9482131befdb4f6ac807a37ef?rik=7r0yCatxAKZthg&pid=ImgRaw&r=0"
   },
   {
     "_id": "64fa1e1b0000000000000012",
@@ -18,8 +17,7 @@
     "publishedYear": 1934,
     "isbn": "9780007119310",
     "description": "Detective Hercule Poirot solves a murder.",
-    "coverUrl": "https://i.harperapps.com/hcanz/covers/9780008249434/y648.jpg",
-    "addedBy": "64fa1e1b0000000000000002"
+    "coverUrl": "https://i.harperapps.com/hcanz/covers/9780008249434/y648.jpg"
   },
   {
     "_id": "64fa1e1b0000000000000013",
@@ -29,7 +27,26 @@
     "publishedYear": 1813,
     "isbn": "9780141439518",
     "description": "A classic love story.",
-    "coverUrl": "https://m.media-amazon.com/images/M/MV5BMTA1NDQ3NTcyOTNeQTJeQWpwZ15BbWU3MDA0MzA4MzE@._V1_.jpg",
-    "addedBy": "64fa1e1b0000000000000003"
+    "coverUrl": "https://m.media-amazon.com/images/M/MV5BMTA1NDQ3NTcyOTNeQTJeQWpwZ15BbWU3MDA0MzA4MzE@._V1_.jpg"
+  },
+  {
+    "_id": "64fa1e1b0000000000000014",
+    "title": "Perfume",
+    "author": "Patrick Süskind",
+    "genres": ["Horror fiction", "Mystery","Magic"],
+    "publishedYear": 1985,
+    "isbn": "9780141439629",
+    "description": "The novel explores the sense of smell and its relationship with the emotional meanings that scents may have.",
+    "coverUrl": "https://upload.wikimedia.org/wikipedia/en/f/f5/PerfumeSuskind.jpg"
+  },
+  {
+    "_id": "64fa1e1b0000000000000015",
+    "title": "Twilight",
+    "author": "Stephanie Meyer",
+    "genres": ["Romance", "Fantasy"],
+    "publishedYear": 2005,
+    "isbn": "9780141430739",
+    "description": "After moving to Forks, Bella finds herself involuntarily drawn to a mysterious, handsome boy, Edward Cullen and eventually learns that he is a member of a vampire family which drinks animal blood rather than human blood.",
+    "coverUrl": "https://tse3.mm.bing.net/th/id/OIP.KgjZoLdnTdqgkzBDTE3K4wHaLo?cb=thfvnext&rs=1&pid=ImgDetMain&o=7&rm=3"
   }
 ]

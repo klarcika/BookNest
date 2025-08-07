@@ -5,7 +5,12 @@
     "email": "barbara@example.com",
     "passwordHash": "hashedpassword1",
     "preferences": { "genres": ["Fantasy", "Sci-Fi"], "language": "sl" },
-    "profile": { "name": "Barbara Ferlinc", "avatarUrl": "", "bio": "Rada berem domišljijske knjige." }
+    "profile": { "name": "Barbara Ferlinc", "avatarUrl": "", "bio": "Rada berem domišljijske knjige." },
+    "createdAt":"2025-09-01T10:00:00Z",
+    "bookshelves":{
+      "wantToRead":[],
+      "currentlyReading":["64fa1e1b0000000000000012"],
+      "read":["64fa1e1b0000000000000011","64fa1e1b0000000000000013"]}
   },
   {
     "_id": "64fa1e1b0000000000000002",
@@ -13,14 +18,27 @@
     "email": "vivien@example.com",
     "passwordHash": "hashedpassword2",
     "preferences": { "genres": ["Mystery"], "language": "en" },
-    "profile": { "name": "Vivien Štampfer", "avatarUrl": "", "bio": "Kriminalke so top!" }
+    "profile": { "name": "Vivien Štampfer", "avatarUrl": "", "bio": "Kriminalke so top!" },
+    "createdAt":"2025-09-01T10:00:00Z",
+    "bookshelves":{
+      "wantToRead":[{"$oid":"64fa1e1b0000000000000011"},{"$oid": "64fa1e1b0000000000000013"}],
+      "currentlyReading":[{"$oid":"64fa1e1b0000000000000012"}],
+      "read":[{"$oid":"000000000000000000000000"}]}
   },
-  {
-    "_id": "64fa1e1b0000000000000003",
-    "username": "klara.k",
-    "email": "klara@example.com",
-    "passwordHash": "hashedpassword3",
-    "preferences": { "genres": ["Romance", "Drama"], "language": "de" },
-    "profile": { "name": "Klara Kirbiš", "avatarUrl": "", "bio": "Uživam v klasičnih romanih." }
+  {"_id":{"$oid":"6890d8a7904558ba7cea90b8"},
+    "username":"klarcika",
+    "email":"klara@gmail.com",
+    "passwordHash":"...",
+    "preferences": {
+      "genres":["Triller","Mistery"]},
+    "profile":{
+      "name":"Klara Kirbis",
+      "avatarUrl":" ",
+      "bio":" nic"},
+    "createdAt":"2025-08-01T10:00:00Z",
+    "bookshelves":{
+      "wantToRead":[{"$oid":"64fa1e1b0000000000000011"}],
+      "currentlyReading":[{"$oid":"64fa1e1b0000000000000012"}],
+      "read":[{"$oid":"000000000000000000000000"}]}
   }
 ]
