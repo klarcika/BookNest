@@ -1,10 +1,11 @@
-// src/pages/HomePage.jsx
 import React, { useState } from 'react';
 import books from '../data/books.json';
+import BookCard from '../components/BookCard'; // predpostavimo, da obstaja
 
 const HomePage = () => {
     const [genreFilter, setGenreFilter] = useState('');
-    const [wantToRead, setWantToRead] = useState([]); // Simulacija user bookshelves
+    const [wantToRead, setWantToRead] = useState([]); // simulacija user bookshelves
+
     const genres = [...new Set(books.flatMap(book => book.genres))];
 
     const filteredBooks = genreFilter
@@ -34,30 +35,13 @@ const HomePage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-
                 {filteredBooks.map(book => (
-                    <div
+                    <BookCard
                         key={book._id}
-                        className="bg-white rounded-lg shadow hover:shadow-xl transition p-4 text-left flex flex-col"
-                    >
-                        <img
-                            src={book.coverUrl}
-                            alt={book.title}
-                            className="w-full object-cover rounded mb-4 aspect-[3/4]"
-                        />
-                        <h2 className="text-xl font-semibold text-gray-800">{book.title}</h2>
-                        <p className="text-sm text-gray-600 mb-2">by {book.author} ({book.publishedYear})</p>
-                        <p className="text-sm text-gray-700 mb-4 flex-grow">{book.description}</p>
-
-                        <button
-                            onClick={() => handleAddToWantToRead(book._id)}
-                            disabled={wantToRead.includes(book._id)}
-                            className={`self-end px-3 py-1 rounded text-white font-medium 
-                ${wantToRead.includes(book._id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
-                        >
-                            {wantToRead.includes(book._id) ? 'Added ✓' : '+ Want to read '}
-                        </button>
-                    </div>
+                        book={book}
+                        added={wantToRead.includes(book._id)}
+                        onAddToWantToRead={() => handleAddToWantToRead(book._id)}
+                    />
                 ))}
             </div>
         </div>

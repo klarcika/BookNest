@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import users from '../data/users.json';
 import books from '../data/books.json';
+import BookCard from '../components/BookCard';
+import BookCardDetails from "../components/BookCardDetails"; // nova komponenta
 
 const currentUserId = "64fa1e1b0000000000000001"; // Barbara
 
@@ -9,14 +11,17 @@ const ProfilePage = () => {
     const [bookshelves, setBookshelves] = useState(user.bookshelves);
     const [showReviewFormFor, setShowReviewFormFor] = useState(null);
     const [reviews, setReviews] = useState({});
-
-    const getBook = id => books.find(b => b._id === id);
+    const [readingChallenge, setReadingChallenge] = useState({ goal: null, completed: 0 });
+    const [showChallengeForm, setShowChallengeForm] = useState(false);
+    const [challengeInput, setChallengeInput] = useState("");
 
     const shelfLabels = {
         wantToRead: 'Want to Read',
         currentlyReading: 'Currently Reading',
         read: 'Read'
     };
+
+    const getBook = id => books.find(b => b._id === id);
 
     const handleMove = (bookId, fromShelf, toShelf) => {
         if (fromShelf === toShelf) return;
@@ -29,13 +34,24 @@ const ProfilePage = () => {
 
         if (toShelf === "read") {
             setShowReviewFormFor(bookId);
+            setReadingChallenge(prev =>
+                prev.goal
+                    ? { ...prev, completed: Math.min(prev.completed + 1, prev.goal) }
+                    : prev
+            );
         }
     };
 
     const handleReviewSubmit = (bookId) => {
         console.log("Review for book:", bookId, reviews[bookId]);
-        // Shraniš lahko tudi v lokalno datoteko, ali pošlješ na backend
         setShowReviewFormFor(null);
+    };
+
+    const handleChallengeSubmit = () => {
+        if (!challengeInput || isNaN(challengeInput)) return;
+        setReadingChallenge({ goal: parseInt(challengeInput), completed: 0 });
+        setShowChallengeForm(false);
+        setChallengeInput("");
     };
 
     const renderBooks = (bookIds, currentShelf) => (
@@ -43,28 +59,13 @@ const ProfilePage = () => {
             {bookIds.map(id => {
                 const book = getBook(id);
                 return (
-                    <div key={id} className="bg-white rounded shadow p-4 flex flex-col">
-                        <img
-                            src={book?.coverUrl}
-                            alt={book?.title}
-                            className="w-full object-cover rounded aspect-[3/4] mb-2"
+                    <div key={id}>
+                        <BookCardDetails
+                            book={book}
+                            currentShelf={currentShelf}
+                            shelfLabels={shelfLabels}
+                            onMove={(toShelf) => handleMove(id, currentShelf, toShelf)}
                         />
-                        <h3 className="text-md font-semibold text-center">{book?.title}</h3>
-                        <p className="text-sm text-gray-600 text-center">{book?.author}</p>
-                        <p className="text-xs text-gray-400 mb-2">{book?.publishedYear}</p>
-
-                        <select
-                            onChange={(e) => handleMove(id, currentShelf, e.target.value)}
-                            value={currentShelf}
-                            className="text-sm mt-auto bg-purple-100 border border-purple-300 rounded px-2 py-1 text-purple-800 mb-2"
-                        >
-                            {Object.entries(shelfLabels).map(([shelfKey, label]) =>
-                                    shelfKey !== currentShelf && (
-                                        <option key={shelfKey} value={shelfKey}>{`Move to: ${label}`}</option>
-                                    )
-                            )}
-                            <option value={currentShelf}>{shelfLabels[currentShelf]} ✓</option>
-                        </select>
 
                         {showReviewFormFor === id && (
                             <div className="mt-3 w-full bg-purple-50 p-3 rounded text-sm">
@@ -118,13 +119,55 @@ const ProfilePage = () => {
     );
 
     return (
-        <div >
-        <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
+        <div>
+            <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
 
-            <div className="bg-white rounded shadow p-6 mb-10 text-left max-w-4xl mx-auto">
+            <div className="bg-white rounded shadow p-6 mb-6 text-left max-w-4xl mx-auto">
                 <p><strong>Name:</strong> {user.profile.name}</p>
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Bio:</strong> {user.profile.bio}</p>
+
+                {/* Yearly Reading Challenge */}
+                <div className="mt-6 flex items-center gap-6">
+                    {readingChallenge.goal ? (
+                        <div className="flex items-center gap-4">
+                            <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
+                                {readingChallenge.completed}/{readingChallenge.goal}
+                            </div>
+                            <button
+                                onClick={() => setReadingChallenge({ goal: null, completed: 0 })}
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                            >
+                                Reset
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setShowChallengeForm(true)}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+                        >
+                            Add Yearly Reading Challenge
+                        </button>
+                    )}
+                </div>
+
+                {showChallengeForm && (
+                    <div className="mt-4 flex items-center gap-2">
+                        <input
+                            type="number"
+                            placeholder="Number of books"
+                            value={challengeInput}
+                            onChange={(e) => setChallengeInput(e.target.value)}
+                            className="border rounded px-2 py-1"
+                        />
+                        <button
+                            onClick={handleChallengeSubmit}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
+                        >
+                            Save
+                        </button>
+                    </div>
+                )}
             </div>
 
             <section className="mb-10 max-w-6xl mx-auto">
