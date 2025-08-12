@@ -1,39 +1,95 @@
 import Obvestilo from "../models/obvestilo.model.js";
 
 export const seznamObvestil = async (req, res) => {
-  const { uporabnikId, status, tip } = req.query;
-  const q = {};
-  if (uporabnikId) q.uporabnikId = uporabnikId;
-  if (status) q.status = status;
-  if (tip) q.tip = tip;
-  const vrstice = await Obvestilo.find(q).sort({ datumUstvarjeno: -1 }).lean();
-  res.json(vrstice);
+  try {
+    const { uporabnikId, status, tip } = req.query;
+    const q = {};
+    if (uporabnikId) q.uporabnikId = uporabnikId;
+    if (status) q.status = status;
+    if (tip) q.tip = tip;
+    const vrstice = await Obvestilo.find(q).sort({ datumUstvarjeno: -1 }).lean();
+    res.status(200).json(vrstice);
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri pridobivanju obvestil", napaka: err.message });
+  }
 };
 
 export const enoObvestilo = async (req, res) => {
-  const obvestilo = await Obvestilo.findById(req.params.id).lean();
-  if (!obvestilo) return res.status(404).json({ sporocilo: "Ni najdeno" });
-  res.json(obvestilo);
+  try {
+    const obvestilo = await Obvestilo.findById(req.params.id).lean();
+    if (!obvestilo) return res.status(404).json({ sporocilo: "Ni najdeno" });
+    res.status(200).json(obvestilo);
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri pridobivanju obvestila", napaka: err.message });
+  }
 };
 
 export const dodajObvestilo = async (req, res) => {
-  const { uporabnikId, tip, vsebina, status } = req.body;
-  if (!uporabnikId || !tip) {
-    return res.status(400).json({ sporocilo: "Polja uporabnikId in tip so obvezna" });
+  try {
+    const { uporabnikId, tip, status, knjigaId, izzivId, podatki } = req.body;
+    if (!uporabnikId || !tip) {
+      return res.status(400).json({ sporocilo: "Polja uporabnikId in tip so obvezna" });
+    }
+    let vsebina = {};
+    if (tip === "novaKnjiga") {
+      if (!knjigaId || !podatki?.naslovKnjige || !podatki?.avtor) {
+        return res.status(400).json({ sporocilo: "Za tip novaKnjiga so obvezni knjigaId, naslovKnjige in avtor" });
+      }
+      vsebina = {
+        knjigaId,
+        naslovKnjige: podatki.naslovKnjige,
+        avtor: podatki.avtor,
+        sporocilo: `Dodana je nova knjiga: ${podatki.naslovKnjige}`
+      };
+    }
+    if (tip === "recenzijaPrijatelja") {
+      if (!knjigaId || !podatki?.prijatelj || !podatki?.naslovKnjige || !podatki?.ocena) {
+        return res.status(400).json({ sporocilo: "Za tip recenzijaPrijatelja so obvezni knjigaId, prijatelj, naslovKnjige in ocena" });
+      }
+      vsebina = {
+        knjigaId,
+        prijatelj: podatki.prijatelj,
+        naslovKnjige: podatki.naslovKnjige,
+        ocena: podatki.ocena,
+        sporocilo: `${podatki.prijatelj} je dodal novo recenzijo za ${podatki.naslovKnjige}`
+      };
+    }
+    if (tip === "bralniIzziv") {
+      if (!izzivId || !podatki?.nazivIzziva || !podatki?.status) {
+        return res.status(400).json({ sporocilo: "Za tip bralniIzziv so obvezni izzivId, nazivIzziva in status" });
+      }
+      vsebina = {
+        izzivId,
+        nazivIzziva: podatki.nazivIzziva,
+        status: podatki.status,
+        sporocilo: `Rok za dokončanje izziva "${podatki.nazivIzziva}" se izteče kmalu`
+      };
+    }
+
+    const novo = await Obvestilo.create({ uporabnikId, tip, knjigaId, izzivId, vsebina, status });
+    res.status(201).json(novo);
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri ustvarjanju obvestila", napaka: err.message });
   }
-  const novo = await Obvestilo.create({ uporabnikId, tip, vsebina, status });
-  res.status(201).json(novo);
 };
 
 export const posodobiObvestilo = async (req, res) => {
-  const spremembe = req.body;
-  const posodobljeno = await Obvestilo.findByIdAndUpdate(req.params.id, { $set: spremembe }, { new: true });
-  if (!posodobljeno) return res.status(404).json({ sporocilo: "Ni najdeno" });
-  res.json(posodobljeno);
+  try {
+    const spremembe = req.body;
+    const posodobljeno = await Obvestilo.findByIdAndUpdate(req.params.id, { $set: spremembe }, { new: true, runValidators: true });
+    if (!posodobljeno) return res.status(404).json({ sporocilo: "Ni najdeno" });
+    res.status(200).json(posodobljeno);
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri posodabljanju obvestila", napaka: err.message });
+  }
 };
 
 export const izbrisiObvestilo = async (req, res) => {
-  const izbrisano = await Obvestilo.findByIdAndDelete(req.params.id);
-  if (!izbrisano) return res.status(404).json({ sporocilo: "Ni najdeno" });
-  res.json({ ok: true });
+  try {
+    const izbrisano = await Obvestilo.findByIdAndDelete(req.params.id);
+    if (!izbrisano) return res.status(404).json({ sporocilo: "Ni najdeno" });
+    res.status(200).json({ ok: true, sporocilo: "Obvestilo izbrisano" });
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri brisanju obvestila", napaka: err.message });
+  }
 };
