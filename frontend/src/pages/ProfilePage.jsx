@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import users from '../data/users.json';
-import books from '../data/books.json';
-import BookCard from '../components/BookCard';
-import BookCardDetails from "../components/BookCardDetails"; // nova komponenta
+import React, { useState, useEffect } from 'react';
+import BookCardDetails from "../components/BookCardDetails";
 
-const currentUserId = "64fa1e1b0000000000000001"; // Barbara
+const currentUserId = "6890d8a7904558ba7cea90b8"; // Barbara
 
 const ProfilePage = () => {
-    const user = users.find(u => u._id === currentUserId);
-    const [bookshelves, setBookshelves] = useState(user.bookshelves);
+    const [user, setUser] = useState({
+        profile: { name: "Unknown", bio: "" },
+        email: "",
+    });
+    const [books, setBooks] = useState([]);
+    const [bookshelves, setBookshelves] = useState({ wantToRead: [], currentlyReading: [], read: [] });
     const [showReviewFormFor, setShowReviewFormFor] = useState(null);
     const [reviews, setReviews] = useState({});
     const [readingChallenge, setReadingChallenge] = useState({ goal: null, completed: 0 });
@@ -20,6 +21,31 @@ const ProfilePage = () => {
         currentlyReading: 'Currently Reading',
         read: 'Read'
     };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const userRes = await fetch(`http://localhost:3003/users/${currentUserId}`);
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    setUser(userData);
+                    setBookshelves(userData.bookshelves || { wantToRead: [], currentlyReading: [], read: [] });
+                }
+
+                const booksRes = await fetch(`http://localhost:3003/books`);
+                if (booksRes.ok) {
+                    const booksData = await booksRes.json();
+                    setBooks(booksData);
+                }
+
+            } catch (error) {
+                console.error("Napaka pri pridobivanju podatkov:", error);
+                // Če pride do napake, se razdelki vseeno prikažejo prazni
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const getBook = id => books.find(b => b._id === id);
 
@@ -58,6 +84,7 @@ const ProfilePage = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {bookIds.map(id => {
                 const book = getBook(id);
+                if (!book) return null;
                 return (
                     <div key={id}>
                         <BookCardDetails
@@ -66,7 +93,6 @@ const ProfilePage = () => {
                             shelfLabels={shelfLabels}
                             onMove={(toShelf) => handleMove(id, currentShelf, toShelf)}
                         />
-
                         {showReviewFormFor === id && (
                             <div className="mt-3 w-full bg-purple-50 p-3 rounded text-sm">
                                 <h4 className="font-semibold mb-1 text-purple-800">Leave a Review</h4>
@@ -127,7 +153,6 @@ const ProfilePage = () => {
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Bio:</strong> {user.profile.bio}</p>
 
-                {/* Yearly Reading Challenge */}
                 <div className="mt-6 flex items-center gap-6">
                     {readingChallenge.goal ? (
                         <div className="flex items-center gap-4">

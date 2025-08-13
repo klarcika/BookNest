@@ -4,8 +4,13 @@ const mongoose = require('mongoose');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 require('dotenv').config();
 
+
+
 const app = express();
 app.use(express.json());
+const { swaggerUi, swaggerDocs } = require('./swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('MongoDB connected to recommendation-service'))
@@ -15,3 +20,4 @@ app.use('/api/recommendations', recommendationRoutes);
 
 const PORT = process.env.PORT || 5005;
 app.listen(PORT, () => console.log(`Recommendation service running on port ${PORT}`));
+

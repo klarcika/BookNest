@@ -10,7 +10,7 @@ app.use(express.json());
 
 app.use('/user/', userRouter);
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

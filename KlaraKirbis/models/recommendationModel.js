@@ -1,9 +1,13 @@
-// models/recommendationModel.js
 const mongoose = require('mongoose');
 
 const recommendationSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    recommendedBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }],
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, unique: true },
+    recommendedBooks: [
+        {
+            bookId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Book' },
+            reason: { type: String }
+        }
+    ],
     generatedAt: { type: Date, default: Date.now }
 });
 

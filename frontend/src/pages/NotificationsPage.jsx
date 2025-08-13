@@ -1,11 +1,25 @@
-// src/pages/NotificationsPage.jsx
-import React from 'react';
-import notifications from '../data/notifications.json';
+import React, { useEffect, useState } from 'react';
 
-const currentUserId = "64fa1e1b0000000000000001";
+const currentUserId = "6890d8a7904558ba7cea90b8";
 
 const NotificationsPage = () => {
-    const userNotifications = notifications.filter(n => n.userId === currentUserId);
+    const [userNotifications, setUserNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch(`http://localhost:3001/obvestila?uporabnikId=${currentUserId}`)
+            .then(res => res.json())
+            .then(data => {
+                setUserNotifications(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) return <p>Loading...</p>;
 
     return (
         <div>
