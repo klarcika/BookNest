@@ -8,9 +8,9 @@ const app = express();
 
 app.use(express.json());
 
-app.use('/book/', bookRouter);
+app.use('/books/', bookRouter);
 
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3032;
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
