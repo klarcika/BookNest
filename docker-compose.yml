@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   backend-books:
-    build: BarbaraFerlinc/book-service
+    build: "./BarbaraFerlinc/book-service"
     container_name: backend-books
     ports:
       - "3032:3032"
@@ -26,7 +26,7 @@ services:
       - app-network
 
   backend-users:
-    build: BarbaraFerlinc/user-service
+    build: "./BarbaraFerlinc/user-service"
     container_name: backend-users
     ports:
       - "3030:3030"
@@ -50,8 +50,8 @@ services:
       - app-network
 
   backend-recommendations:
-    build: ./KlaraKirbis
-    container_name: backend-klara
+    build: "KlaraKirbis/recommendation-service"
+    container_name: backend-recommendations
     ports:
       - "3003:3003"
     environment:
@@ -74,8 +74,8 @@ services:
       - app-network
 
   backend-notifications:
-    build: ./VivienStampfer/notifications
-    container_name: backend-vivi
+    build: "./VivienStampfer/notifications"
+    container_name: backend-notifications
     ports:
       - "3001:3001"
     environment:
@@ -98,20 +98,20 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
+    build: "./frontend"
     container_name: frontend
     ports:
       - "3000:3000"
     environment:
       - BOOKS_API_URL=http://backend-books:3032
       - USERS_API_URL=http://backend-users:3030
-      - RECOMMENDATIONS_API_URL=http://backend-klara:3003
-      - NOTIFICATIONS_API_URL=http://backend-vivi:3001
+      - RECOMMENDATIONS_API_URL=http://backend-recommendations:3003
+      - NOTIFICATIONS_API_URL=http://backend-notifications:3001
     depends_on:
       - backend-books
       - backend-users
-      - backend-klara
-      - backend-vivi
+      - backend-recommendations
+      - backend-notifications
     networks:
       - app-network
 
