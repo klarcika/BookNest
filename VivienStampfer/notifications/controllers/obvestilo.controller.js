@@ -93,3 +93,15 @@ export const izbrisiObvestilo = async (req, res) => {
     res.status(500).json({ sporocilo: "Napaka pri brisanju obvestila", napaka: err.message });
   }
 };
+export const izbrisiVsaZaUporabnika = async (req, res) => {
+  try {
+    const { uporabnikId } = req.params;
+    if (!uporabnikId) {
+      return res.status(400).json({ sporocilo: "Manjka uporabnikId" });
+    }
+    const r = await Obvestilo.deleteMany({ uporabnikId });
+    res.status(200).json({ ok: true, izbrisano: r.deletedCount });
+  } catch (err) {
+    res.status(500).json({ sporocilo: "Napaka pri brisanju", napaka: err.message });
+  }
+};
