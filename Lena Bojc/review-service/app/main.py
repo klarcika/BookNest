@@ -5,10 +5,11 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pymongo.errors import DuplicateKeyError
+from pymongo import ReturnDocument
 from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-from .models import NewReviewIn, ReviewCreated, ReviewOut, Msg, NewCommentIn, CommentOut, CommentCreated
+from .models import NewReviewIn, ReviewCreated, ReviewOut, Msg, NewCommentIn, CommentOut, CommentCreated, ReviewTextIn, ReviewUpdated, ReviewTextIn, RatingIn, ReviewFetched
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
@@ -42,20 +43,25 @@ async def shutdown():
         name="newReview",
 )
 async def new_review(payload: NewReviewIn):
+    existing = await app.db[COLL].find_one({
+        "userId": payload.userId,
+        "bookId": payload.bookId
+    })
+    if existing:
+        return JSONResponse(status_code=409, content={"message": "Review already exists for this user and book"})
+
     doc = payload.model_dump()
     doc["createdAt"] = datetime.now(timezone.utc)
     doc["type"] = "review"
 
     try:
         res = await app.db[COLL].insert_one(doc)
-    except DuplicateKeyError:
-        return {"message": "Review already exists for this user and book"}
     except Exception:
-        return {"message": "Internal server error while creating review"}
+        return JSONResponse(status_code=500, content={"message": "Internal server error while creating review"})
 
     created = await app.db[COLL].find_one({"_id": res.inserted_id})
     return {
-        "message": "Review created successfully", 
+        "message": "Review created successfully",
         "data": to_out(created).model_dump()
     }
 
@@ -77,7 +83,7 @@ async def new_comment(payload: NewCommentIn):
     try:
         res = await app.db[COLL].insert_one(doc)
     except Exception:
-        return {"message": "Internal server error while creating comment"}
+        return JSONResponse(status_code=500, content={"message": "Internal server error while creating comment"})
 
     created = await app.db[COLL].find_one({"_id": res.inserted_id})
     return {
@@ -86,11 +92,111 @@ async def new_comment(payload: NewCommentIn):
     }
 
 # ----- PUT -----
+@app.put(
+    "/reviews/{id}/text",
+    response_model=ReviewUpdated,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Review not found"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="addReviewToStarRating",
+)
+async def add_review_to_star_rating(id: str, body: ReviewTextIn):
+    try:
+        updated = await app.db[COLL].find_one_and_update(
+            {"_id": oid(id), "type": "review"},
+            {"$set": {"review": body.review}},
+            return_document=ReturnDocument.AFTER
+        )
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while updating review"}
+        )
 
+    if not updated:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Review not found"}
+        )
 
+    return {
+        "message": "Review text updated successfully",
+        "data": to_out(updated).model_dump()
+    }
+
+@app.put(
+    "/reviews/{id}/rating",
+    response_model=ReviewUpdated,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Review not found"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="changeStarRating",
+)
+async def change_star_rating(id: str, body: RatingIn):
+    # update_fields = {"rating": body.rating}
+    # if body.review is not None:
+    #     update_fields["review"] = body.review
+    
+    try:
+        updated = await app.db[COLL].find_one_and_update(
+            {"_id": oid(id), "type": "review"},
+            # {"$set": update_fields},
+            {"$set": {"rating": body.rating}},
+            return_document=ReturnDocument.AFTER,
+        )
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while changing rating"},
+        )
+
+    if not updated:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Review not found"},
+        )
+
+    return {
+        "message": "Rating updated successfully",
+        "data": to_out(updated).model_dump(),
+    }
 
 # ----- GET -----
 
+@app.get(
+    "/reviews/{id}",
+    response_model=ReviewFetched,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Review not found"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="reviewById",
+)
+async def review_by_id(id: str):
+    try:
+        doc = await app.db[COLL].find_one({
+            "_id": oid(id),
+            "type": "review",
+            "rating": {"$gte": 1, "$lte": 5},
+        })
+    except Exception:
+        return JSONResponse(status_code=500, content={"message": "Internal server error while fetching review"})
+
+    if not doc:
+        return JSONResponse(status_code=404, content={"message": "Review not found"})
+
+    return {
+        "message": "Review fetched successfully",
+        "data": to_out(doc).model_dump()
+    }
 
 
 # ----- DELETE -----

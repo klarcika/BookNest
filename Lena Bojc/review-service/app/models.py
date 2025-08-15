@@ -2,12 +2,29 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
+
+# ----- IN -----
+
 class NewReviewIn(BaseModel):
     userId: str = Field(..., min_length=1)
     bookId: str = Field(..., min_length=1)
     rating: int = Field(..., ge=1, le=5)
     review: Optional[str] = Field(None, max_length=10_000)
-    
+
+class NewCommentIn(BaseModel):
+    userId: str = Field(..., min_length=1)
+    bookId: str = Field(..., min_length=1)
+    comment: str = Field(..., min_length=1, max_length=10_000)
+
+class ReviewTextIn(BaseModel):
+    review: str = Field(..., min_length=1, max_length=10_000)
+
+class RatingIn(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    # review: Optional[str] = Field(None, min_length=1, max_length=10_000)
+
+
+# ----- OUT -----
 
 class ReviewOut(BaseModel):
     id: str
@@ -22,15 +39,6 @@ class ReviewOut(BaseModel):
     def str_id(cls, v):
         return str(v)
 
-class ReviewCreated(BaseModel):
-    message: str
-    data: ReviewOut
-
-class NewCommentIn(BaseModel):
-    userId: str = Field(..., min_length=1)
-    bookId: str = Field(..., min_length=1)
-    comment: str = Field(..., min_length=1, max_length=10_000)
-
 class CommentOut(BaseModel):
     id: str
     userId: str
@@ -43,9 +51,24 @@ class CommentOut(BaseModel):
     def str_id(cls, v):
         return str(v)
 
+
+# ----- CREATED -----
+
+class ReviewCreated(BaseModel):
+    message: str
+    data: ReviewOut
+
 class CommentCreated(BaseModel):
     message: str
     data: CommentOut
+
+class ReviewUpdated(BaseModel):
+    message: str
+    data: ReviewOut
+
+class ReviewFetched(BaseModel):
+    message: str
+    data: ReviewOut
 
 class Msg(BaseModel):
     message: str
