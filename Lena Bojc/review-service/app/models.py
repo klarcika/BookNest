@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 
 
 # ----- IN -----
@@ -69,6 +69,22 @@ class ReviewUpdated(BaseModel):
 class ReviewFetched(BaseModel):
     message: str
     data: ReviewOut
+
+class ReviewsListData(BaseModel):
+    items: List[ReviewOut]
+    count: int
+
+class ReviewsList(BaseModel):
+    message: str
+    data: ReviewsListData
+
+class CommentsListData(BaseModel):
+    items: List[CommentOut]
+    count: int
+
+class CommentsList(BaseModel):
+    message: str
+    data: CommentsListData
 
 class Msg(BaseModel):
     message: str

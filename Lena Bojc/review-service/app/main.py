@@ -9,7 +9,7 @@ from pymongo import ReturnDocument
 from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-from .models import NewReviewIn, ReviewCreated, ReviewOut, Msg, NewCommentIn, CommentOut, CommentCreated, ReviewTextIn, ReviewUpdated, ReviewTextIn, RatingIn, ReviewFetched
+from .models import NewReviewIn, ReviewCreated, ReviewOut, Msg, NewCommentIn, CommentOut, CommentCreated, ReviewTextIn, ReviewUpdated, ReviewTextIn, RatingIn, ReviewFetched, ReviewsList, ReviewsListData, CommentsList, CommentsListData
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
@@ -168,7 +168,6 @@ async def change_star_rating(id: str, body: RatingIn):
     }
 
 # ----- GET -----
-
 @app.get(
     "/reviews/{id}",
     response_model=ReviewFetched,
@@ -198,10 +197,140 @@ async def review_by_id(id: str):
         "data": to_out(doc).model_dump()
     }
 
+@app.get(
+    "/books/{bookId}/reviews",
+    response_model=ReviewsList,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Book not found (no reviews)"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="allReviewsByBookId",
+)
+async def all_reviews_by_book_id(bookId: str):              #, limit: int = 20, skip: int = 0
+    try:
+        cursor = (
+            app.db[COLL]
+            .find({"type": "review", "bookId": bookId})
+            .sort("createdAt", -1)
+            # .skip(skip*limit)
+            # .limit(limit)
+        )
+        items = [to_out(d) async for d in cursor]
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while listing reviews"},
+        )
+
+    if not items:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Book not found or no reviews for bookId='{bookId}'"},
+        )
+
+    return {
+        "message": "Reviews fetched successfully",
+        "data": ReviewsListData(items=items, count=len(items)).model_dump(),
+    }
+
+@app.get(
+    "/books/{bookId}/comments",
+    response_model=CommentsList,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Book not found (no comments)"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="allCommentsByBookId",
+)
+async def all_comments_by_book_id(bookId: str):
+    try:
+        cursor = (
+            app.db[COLL]
+            .find({"type": "comment", "bookId": bookId})
+            .sort("createdAt", -1)
+        )
+        items = [to_comment_out(d) async for d in cursor]
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while listing comments"},
+        )
+
+    if not items:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Book not found or no comments for bookId='{bookId}'"},
+        )
+
+    return {
+        "message": "Comments fetched successfully",
+        "data": CommentsListData(items=items, count=len(items)).model_dump(),
+    }
+
 
 # ----- DELETE -----
 
+@app.delete(
+    "/comments/{id}",
+    response_model=Msg,
+    status_code=status.HTTP_200_OK,
+    responses={
+        204: {"description": "Comment deleted"},
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Comment not found"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="removeCommentById",
+)
+async def remove_comment_by_id(id: str):
+    try:
+        res = await app.db[COLL].delete_one({"_id": oid(id), "type": "comment"})
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while deleting comment"},
+        )
 
+    if res.deleted_count == 0:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Comment not found"},
+        )
+
+    return {"message": f"Successfully deleted comment with id='{id}'"}
+
+@app.delete(
+    "/reviews/{id}",
+    response_model=Msg,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": Msg, "description": "Review deleted"},
+        400: {"model": Msg, "description": "Bad Request"},
+        404: {"model": Msg, "description": "Review not found"},
+        500: {"model": Msg, "description": "Internal Server Error"},
+    },
+    name="removeReviewById",
+)
+async def remove_review_by_id(id: str):
+    try:
+        res = await app.db[COLL].delete_one({"_id": oid(id), "type": "review"})
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error while deleting review"},
+        )
+
+    if res.deleted_count == 0:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Review not found"},
+        )
+
+    return {"message": f"Successfully deleted review with id='{id}'"}
 
 # ----- Helpers -----
 
