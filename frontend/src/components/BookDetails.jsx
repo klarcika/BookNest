@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import jwtDecode from "jwt-decode";
 import { api } from "../api";
 
 const BookDetails = () => {
