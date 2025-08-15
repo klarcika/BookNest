@@ -1,9 +1,9 @@
-// src/components/Navbar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+
 
 const Navbar = () => {
+    //<NavLink to="/register" className={linkClass}>Register</NavLink>
     const linkClass = ({ isActive }) =>
         isActive
             ? 'text-white border-b-2 border-white pb-1'
@@ -15,25 +15,24 @@ const Navbar = () => {
                 <NavLink to="/" className={linkClass}>Home</NavLink>
                 <NavLink to="/recommendations" className={linkClass}>Recommendations</NavLink>
                 <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
-                <NavLink to="/profile" className={linkClass}>Profil</NavLink>
+
 
             </div>
 
-            <div className="flex gap-6 items-center">
-                {/* Prikaz za neprijavljene uporabnike */}
-                <SignedOut>
-                    <SignInButton mode="modal">
-                        <button className="text-gray-300 hover:text-white">Login / Register</button>
-                    </SignInButton>
-                </SignedOut>
+            <div className="flex gap-6">
+                <NavLink to="/login" className={linkClass}>Login</NavLink>
 
-                {/* Prikaz za prijavljene uporabnike */}
-                <SignedIn>
-                    <UserButton />
-                </SignedIn>
+
+
+
+
+
+                <NavLink to="/profile" className={linkClass}>Profile</NavLink>
+
+
+
             </div>
         </nav>
-    );
-};
-
+    )
+}
 export default Navbar;
