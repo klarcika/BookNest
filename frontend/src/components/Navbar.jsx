@@ -21,16 +21,7 @@ const Navbar = () => {
 
             <div className="flex gap-6">
                 <NavLink to="/login" className={linkClass}>Login</NavLink>
-
-
-
-
-
-
                 <NavLink to="/profile" className={linkClass}>Profile</NavLink>
-
-
-
             </div>
         </nav>
     )
