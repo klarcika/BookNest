@@ -1,18 +1,3 @@
-// routes/recommendationRoutes.js
-const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/recommendationController');
-
-// ===== GET =====
-// Get recommendations for a specific user
-router.get('/:userId', controller.getRecommendationsForUser);
-router.get('/', controller.getAllRecommendations);
-router.post('/:userId', controller.createRecommendationsForUser);
-router.post('/:userId/add', controller.addBookToRecommendations);
-router.put('/:userId', controller.updateRecommendations);
-router.put('/:userId/book/:bookId', controller.updateSingleRecommendation);
-router.delete('/:userId', controller.deleteRecommendationsForUser);
-router.delete('/:userId/book/:bookId', controller.deleteSingleRecommendation);
 
 /**
  * @swagger
@@ -193,8 +178,9 @@ router.post('/:userId/add', controller.addBookToRecommendations);
  *       500:
  *         description: Napaka na strežniku
  */
-router.put('/:userId', controller.updateRecommendations);
-
+router.put('/:userId', controller.updateRecommendations)
+router.put('/:userId/book/:bookId', controller.updateSingleRecommendation);
+router.delete('/:userId', controller.deleteRecommendationsForUser);
 /**
  * @swagger
  * /recommendations/{userId}/book/{bookId}:
