@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api'; // Uvozi api iz api.js
+import { userApi } from '../api';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ const LoginPage = () => {
         setError('');
 
         try {
-            const response = await api.post('/login', {
+            const response = await userApi.post('/login', {
                 username: email, // Backend pričakuje 'username' kot email
                 password,
             });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api'; // Uvozi api iz api.js
+import { userApi } from '../api';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -20,8 +20,8 @@ const RegisterPage = () => {
         setError('');
 
         try {
-            const response = await api.post('/register', {
-                username: formData.email, // Backend pričakuje 'username' kot email
+            const response = await userApi.post('/register', {
+                username: formData.email,
                 password: formData.password,
                 name: formData.name,
                 role: 'user',
