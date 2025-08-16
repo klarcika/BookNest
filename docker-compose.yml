@@ -97,6 +97,38 @@ services:
     networks:
       - app-network
 
+  db-reviews:
+    image: mongo:6.0.14-jammy
+    command: ["mongod", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - db_reviews_data:/data/db
+    # healthcheck:
+    #   test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017", "--eval", "db.adminCommand({ ping: 1 })"]
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 30
+    networks:
+      - app-network
+
+  backend-reviews:
+    build: "./LenaBojc/review-service"
+    environment:
+      MONGO_URL: "mongodb://db-reviews:27017"
+      DB_NAME: "booknest_reviews"
+      FRONTEND_URL: "http://frontend:3000"
+      USERS_API_URL: "http://backend-users:3030"
+      BOOKS_API_URL: "http://backend-books:3032"
+      RECOMMENDATIONS_API_URL: "http://backend-recommendations:3003"
+      NOTIFICATIONS_API_URL: "http://backend-notifications:3001"
+    ports:
+      - "3002:3002"
+    depends_on:
+      - db-reviews
+        # condition: service_healthy
+    networks: 
+      - app-network
+
   frontend:
     build: "./frontend"
     container_name: frontend
@@ -107,11 +139,13 @@ services:
       - USERS_API_URL=http://backend-users:3030
       - RECOMMENDATIONS_API_URL=http://backend-recommendations:3003
       - NOTIFICATIONS_API_URL=http://backend-notifications:3001
+      - REVIEWS_API_URL=http://backend-reviews:3002
     depends_on:
       - backend-books
       - backend-users
       - backend-recommendations
       - backend-notifications
+      - backend-reviews
     networks:
       - app-network
 
@@ -123,3 +157,4 @@ volumes:
   db_users_data:
   db_recommendations_data:
   db_notifications_data:
+  db_reviews_data:

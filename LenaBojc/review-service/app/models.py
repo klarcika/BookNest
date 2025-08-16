@@ -6,21 +6,21 @@ from typing import Optional, List
 # ----- IN -----
 
 class NewReviewIn(BaseModel):
-    userId: str = Field(..., min_length=1)
-    bookId: str = Field(..., min_length=1)
-    rating: int = Field(..., ge=1, le=5)
-    review: Optional[str] = Field(None, max_length=10_000)
+    userId: str = Field(..., min_length=1, example="u1")
+    bookId: str = Field(..., min_length=1, example="b1")
+    rating: int = Field(..., ge=1, le=5, example=5)
+    review: Optional[str] = Field(None, max_length=10_000, example="Great book!")
 
 class NewCommentIn(BaseModel):
-    userId: str = Field(..., min_length=1)
-    bookId: str = Field(..., min_length=1)
-    comment: str = Field(..., min_length=1, max_length=10_000)
+    userId: str = Field(..., min_length=1, example="u1")
+    bookId: str = Field(..., min_length=1, example="b1")
+    comment: str = Field(..., min_length=1, max_length=10_000, example="Great comment!")
 
 class ReviewTextIn(BaseModel):
-    review: str = Field(..., min_length=1, max_length=10_000)
+    review: str = Field(..., min_length=1, max_length=10_000, example="Great book!")
 
 class RatingIn(BaseModel):
-    rating: int = Field(..., ge=1, le=5)
+    rating: int = Field(..., ge=1, le=5, example=5)
     # review: Optional[str] = Field(None, min_length=1, max_length=10_000)
 
 
