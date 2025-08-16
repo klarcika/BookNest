@@ -12,8 +12,7 @@ import {
   izbrisiKnjigoSPolice,
   izbrisiShelvesByUser
 } from "../controllers/shelves.controller.js";
-const { authenticateToken } = require('../controllers/shelves.controller.js'); // Prilagodi pot
-
+import { authenticateToken } from '../controllers/shelves.controller.js';
 const r = Router();
 
 /**

@@ -1,8 +1,9 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import shelvesRoutes from "./routes/shelvesroutes.js";
 import { swaggerUi, swaggerDocs } from "./swagger.js"; 
+import morgan from "morgan";
 
 const app = express();
 

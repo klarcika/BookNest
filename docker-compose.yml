@@ -155,6 +155,18 @@ services:
     networks:
       - app-network
 
+  backend-shelves:
+    build: "./VivienStampfer/shelves"
+    container_name: backend-shelves
+    ports:
+      - "3005:3005"
+    env_file:
+      - ./VivienStampfer/shelves/.env
+    environment:
+      - FRONTEND_URL=http://frontend:3000
+    networks:
+      - app-network
+
   frontend:
     build: "./frontend"
     container_name: frontend
