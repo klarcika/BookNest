@@ -11,12 +11,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from .models import NewReviewIn, ReviewCreated, ReviewOut, Msg, NewCommentIn, CommentOut, CommentCreated, ReviewTextIn, ReviewUpdated, ReviewTextIn, RatingIn, ReviewFetched, ReviewsList, ReviewsListData, CommentsList, CommentsListData
 
-# load_dotenv()
-# MONGO_URL = os.getenv("MONGO_URL")
-# DB_NAME = os.getenv("DB_NAME")
-MONGO_URL = os.environ["MONGO_URL"]
-DB_NAME = os.environ["DB_NAME"]
-COLL = "reviews"
+load_dotenv()
+MONGO_URL = os.getenv("MONGO_URL")
+DB_NAME = os.getenv("DB_NAME")
+COLL = os.getenv("COLLECTION_NAME")
+# MONGO_URL = os.environ["MONGO_URL"]
+# DB_NAME = os.environ["DB_NAME"]
+# COLL = "reviews"
 
 app = FastAPI(title="Reviews Service", version="1.0")
 
@@ -24,14 +25,14 @@ app = FastAPI(title="Reviews Service", version="1.0")
 
 @app.on_event("startup")
 async def startup():
-    app.mongodb = AsyncIOMotorClient(MONGO_URL)
-    app.db = app.mongodb[DB_NAME]
+    app.mongodb_client = AsyncIOMotorClient(MONGO_URL)
+    app.db = app.mongodb_client[DB_NAME]
     # await app.db[COLL].create_index([("bookId", 1)])
     # await app.db[COLL].create_index([("createdAt", -1)])
 
 @app.on_event("shutdown")
 async def shutdown():
-    app.mongodb.close()
+    app.mongodb_client.close()
 
 # ----- POST -----
 @app.post("/reviews",

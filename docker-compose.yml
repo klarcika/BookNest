@@ -97,36 +97,54 @@ services:
     networks:
       - app-network
 
-  db-reviews:
-    image: mongo:6.0.14-jammy
-    command: ["mongod", "--bind_ip_all"]
-    restart: unless-stopped
-    volumes:
-      - db_reviews_data:/data/db
-    # healthcheck:
-    #   test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017", "--eval", "db.adminCommand({ ping: 1 })"]
-    #   interval: 5s
-    #   timeout: 3s
-    #   retries: 30
-    networks:
-      - app-network
+  # db-reviews:
+  #   image: mongo:6.0.14-jammy
+  #   command: ["mongod", "--bind_ip_all"]
+  #   restart: unless-stopped
+  #   volumes:
+  #     - db_reviews_data:/data/db
+  #   # healthcheck:
+  #   #   test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017", "--eval", "db.adminCommand({ ping: 1 })"]
+  #   #   interval: 5s
+  #   #   timeout: 3s
+  #   #   retries: 30
+  #   networks:
+  #     - app-network
 
   backend-reviews:
     build: "./LenaBojc/review-service"
+    container_name: backend-reviews
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./LenaBojc/review-service/.env
     environment:
-      MONGO_URL: "mongodb://db-reviews:27017"
-      DB_NAME: "booknest_reviews"
+      # MONGO_URL: "mongodb://db-reviews:27017"
+      # DB_NAME: "booknest_reviews"
+      # COLLECTION_NAME: ${COLLECTION_NAME}
       FRONTEND_URL: "http://frontend:3000"
       USERS_API_URL: "http://backend-users:3030"
       BOOKS_API_URL: "http://backend-books:3032"
       RECOMMENDATIONS_API_URL: "http://backend-recommendations:3003"
       NOTIFICATIONS_API_URL: "http://backend-notifications:3001"
-    ports:
-      - "3002:3002"
-    depends_on:
-      - db-reviews
-        # condition: service_healthy
     networks: 
+      - app-network
+
+  backend-statistics:
+    build: "./LenaBojc/statistics-service"
+    container_name: backend-statistics
+    ports:
+      - "3004:3004"
+    env_file:
+      - ./LenaBojc/statistics-service/.env
+    environment:
+      # MONGO_URL: ${MONGO_URL}
+      # DB_NAME: ${DB_NAME}
+      # COLLECTION_NAME: ${COLLECTION_NAME}
+      FRONTEND_URL: http://frontend:3000
+      USERS_API_URL: http://backend-users:3030
+      BOOKS_API_URL: http://backend-books:3032
+    networks:
       - app-network
 
   frontend:
@@ -140,12 +158,14 @@ services:
       - RECOMMENDATIONS_API_URL=http://backend-recommendations:3003
       - NOTIFICATIONS_API_URL=http://backend-notifications:3001
       - REVIEWS_API_URL=http://backend-reviews:3002
+      - STATISTICS_API_URL=http://backend-statistics:3004
     depends_on:
       - backend-books
       - backend-users
       - backend-recommendations
       - backend-notifications
       - backend-reviews
+      - backend-statistics
     networks:
       - app-network
 
