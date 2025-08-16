@@ -21,46 +21,35 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log('Fetching user data with /me...');
                 const userRes = await userApi.get('/me');
-                console.log('User response:', userRes.data);
-                setUser(userRes.data);
+                setUser(userRes?.data || { profile: { name: 'Unknown', bio: '' }, email: '' });
 
-                console.log('Fetching shelves with /shelves?userId=...', userRes.data.id);
-                const shelvesRes = await bookshelfApi.get('/shelves?userId=' + userRes.data.id);
-                console.log('Shelves response:', shelvesRes.data);
-                const shelfData = shelvesRes.data[0]?.shelves || { wantToRead: [], reading: [], read: [] };
+                const shelvesRes = await bookshelfApi.get('/?userId=' + userRes?.data?.id);
+                const shelfData = shelvesRes?.data?.[0]?.shelves || { wantToRead: [], currentlyReading: [], read: [] };
                 setBookshelves({
                     wantToRead: shelfData.wantToRead || [],
-                    currentlyReading: shelfData.reading || [],
+                    currentlyReading: shelfData.currentlyReading || [],
                     read: shelfData.read || [],
                 });
 
-                console.log('Fetching books with /books...');
-                const booksRes = await bookApi.get('/books');
-                console.log('Books response:', booksRes.data);
-                setBooks(booksRes.data);
+                const booksRes = await bookApi.get('/');
+                setBooks(booksRes?.data || []);
             } catch (err) {
-                console.error('Fetch error details:', err.response?.data || err.message, err.response?.status);
-                setError(err.response?.data?.error || 'Failed to fetch data');
-                if (err.response?.status === 401) {
-                    console.log('Attempting to refresh token...');
+                setError(err?.response?.data?.error || 'Failed to fetch data');
+                if (err?.response?.status === 401) {
                     try {
                         await userApi.post('/refresh-token');
-                        console.log('Token refreshed, retrying fetch...');
-                        await fetchData(); // Poskusi znova
-                    } catch (refreshErr) {
-                        console.error('Refresh failed:', refreshErr.response?.data);
+                        await fetchData(); // retry
+                    } catch {
                         navigate('/login');
                     }
                 }
             }
         };
-
         fetchData();
     }, [navigate]);
 
-    const getBook = (id) => books.find((b) => b._id === id);
+    const getBook = (id) => books.find((b) => b?._id === id);
 
     const handleMove = async (bookId, fromShelf, toShelf) => {
         if (fromShelf === toShelf) return;
@@ -68,41 +57,40 @@ const ProfilePage = () => {
         try {
             const updatedShelves = {
                 ...bookshelves,
-                [fromShelf]: bookshelves[fromShelf].filter((item) => item.bookId !== bookId),
+                [fromShelf]: bookshelves[fromShelf]?.filter((item) => item?.bookId !== bookId) || [],
                 [toShelf]: [
-                    ...new Set([
-                        ...bookshelves[toShelf],
-                        { bookId, ...(toShelf === 'wantToRead' ? { date: new Date().toISOString() } : { dateAdded: new Date().toISOString() }) },
-                    ]),
+                    ...(bookshelves[toShelf] || []),
+                    {
+                        bookId,
+                        date: new Date().toISOString(),
+                    },
                 ],
             };
 
-            await bookshelfApi.post(`/shelves/${user.id}/move`, {
+            await bookshelfApi.post(`/${user?.id}/move`, {
                 from: fromShelf,
                 to: toShelf,
                 bookId,
                 date: new Date().toISOString(),
-                dateAdded: new Date().toISOString(),
             });
+
             setBookshelves(updatedShelves);
 
             if (toShelf === 'read') {
                 setShowReviewFormFor(bookId);
-                setReadingChallenge((prev) =>
-                    prev.goal ? { ...prev, completed: Math.min(prev.completed + 1, prev.goal) } : prev
-                );
+                setReadingChallenge((prev) => (prev?.goal ? { ...prev, completed: Math.min(prev.completed + 1, prev.goal) } : prev));
             }
-        } catch (err) {
-            setError(err.response?.data?.error || 'Failed to update bookshelf');
+        } catch {
+            setError('Failed to update bookshelf');
         }
     };
 
     const handleReviewSubmit = async (bookId) => {
         try {
-            await reviewApi.post('/reviews', { bookId, rating: reviews[bookId]?.rating, comment: reviews[bookId]?.comment });
+            await reviewApi.post('/reviews', { bookId, rating: reviews?.[bookId]?.rating, comment: reviews?.[bookId]?.comment });
             setShowReviewFormFor(null);
-        } catch (err) {
-            setError(err.response?.data?.error || 'Failed to submit review');
+        } catch {
+            setError('Failed to submit review');
         }
     };
 
@@ -114,15 +102,15 @@ const ProfilePage = () => {
             setReadingChallenge(newChallenge);
             setShowChallengeForm(false);
             setChallengeInput('');
-        } catch (err) {
-            setError(err.response?.data?.error || 'Failed to set challenge');
+        } catch {
+            setError('Failed to set challenge');
         }
     };
 
-    const renderBooks = (bookIds, currentShelf) => (
+    const renderBooks = (bookIds = [], currentShelf) => (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {bookIds.map((item) => {
-                const book = getBook(item.bookId);
+                const book = getBook(item?.bookId);
                 if (!book) return null;
                 return (
                     <div key={item.bookId}>
@@ -181,12 +169,14 @@ const ProfilePage = () => {
         <div>
             {error && <p className="text-red-500 text-center mb-4">{error}</p>}
             <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
+
             <div className="bg-white rounded shadow p-6 mb-6 text-left max-w-4xl mx-auto">
-                <p><strong>Name:</strong> {user.profile.name}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Bio:</strong> {user.profile.bio}</p>
+                <p><strong>Name:</strong> {user?.profile?.name || 'Unknown'}</p>
+                <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
+                <p><strong>Bio:</strong> {user?.profile?.bio || ''}</p>
+
                 <div className="mt-6 flex items-center gap-6">
-                    {readingChallenge.goal ? (
+                    {readingChallenge?.goal ? (
                         <div className="flex items-center gap-4">
                             <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
                                 {readingChallenge.completed}/{readingChallenge.goal}
@@ -207,6 +197,7 @@ const ProfilePage = () => {
                         </button>
                     )}
                 </div>
+
                 {showChallengeForm && (
                     <div className="mt-4 flex items-center gap-2">
                         <input
@@ -225,17 +216,20 @@ const ProfilePage = () => {
                     </div>
                 )}
             </div>
+
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">✅ Read</h2>
-                {bookshelves.read.length ? renderBooks(bookshelves.read, 'read') : <p className="text-gray-600">No books read yet.</p>}
+                {bookshelves?.read?.length ? renderBooks(bookshelves.read, 'read') : <p className="text-gray-600">No books read yet.</p>}
             </section>
+
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📖 Currently Reading</h2>
-                {bookshelves.currentlyReading.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') : <p className="text-gray-600">No books currently reading.</p>}
+                {bookshelves?.currentlyReading?.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') : <p className="text-gray-600">No books currently reading.</p>}
             </section>
+
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📚 Want to Read</h2>
-                {bookshelves.wantToRead.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') : <p className="text-gray-600">No books in wishlist.</p>}
+                {bookshelves?.wantToRead?.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') : <p className="text-gray-600">No books in wishlist.</p>}
             </section>
         </div>
     );
