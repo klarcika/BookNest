@@ -20,6 +20,9 @@ app.use('/users', userRouter);
 
 const port = process.env.PORT || 3030;
 
+const { swaggerUi, swaggerDocs } = require('./swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

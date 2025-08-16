@@ -6,96 +6,104 @@ services:
     container_name: backend-books
     ports:
       - "3032:3032"
+    env_file:
+      - ./BarbaraFerlinc/book-service/.env
     environment:
-      - DB_HOST=db-books
-      - DB_PORT=27017
+      # - DB_HOST=db-books
+      # - DB_PORT=27017
       - FRONTEND_URL=http://frontend:3000
-    depends_on:
-      - db-books
+    # depends_on:
+    #   - db-books
     networks:
       - app-network
 
-  db-books:
-    image: mongo:6.0
-    container_name: db-books
-    ports:
-      - "27018:27017"
-    volumes:
-      - db_books_data:/data/db
-    networks:
-      - app-network
+  # db-books:
+  #   image: mongo:6.0
+  #   container_name: db-books
+  #   ports:
+  #     - "27018:27017"
+  #   volumes:
+  #     - db_books_data:/data/db
+  #   networks:
+  #     - app-network
 
   backend-users:
     build: "./BarbaraFerlinc/user-service"
     container_name: backend-users
     ports:
       - "3030:3030"
+    env_file:
+      - ./BarbaraFerlinc/user-service/.env
     environment:
-      - DB_HOST=db-users
-      - DB_PORT=27017
+      # - DB_HOST=db-users
+      # - DB_PORT=27017
       - FRONTEND_URL=http://frontend:3000
-    depends_on:
-      - db-users
+    # depends_on:
+    #   - db-users
     networks:
       - app-network
 
-  db-users:
-    image: mongo:6.0
-    container_name: db-users
-    ports:
-      - "27019:27017"
-    volumes:
-      - db_users_data:/data/db
-    networks:
-      - app-network
+  # db-users:
+  #   image: mongo:6.0
+  #   container_name: db-users
+  #   ports:
+  #     - "27019:27017"
+  #   volumes:
+  #     - db_users_data:/data/db
+  #   networks:
+  #     - app-network
 
   backend-recommendations:
     build: "KlaraKirbis/recommendation-service"
     container_name: backend-recommendations
     ports:
       - "3003:3003"
+    env_file:
+      - ./KlaraKirbis/recommendation-service/.env
     environment:
-      - DB_HOST=db-recommendations
-      - DB_PORT=27017
+      # - DB_HOST=db-recommendations
+      # - DB_PORT=27017
       - FRONTEND_URL=http://frontend:3000
-    depends_on:
-      - db-recommendations
+    # depends_on:
+    #   - db-recommendations
     networks:
       - app-network
 
-  db-recommendations:
-    image: mongo:6.0
-    container_name: db-recommendations
-    ports:
-      - "27020:27017"
-    volumes:
-      - db_recommendations_data:/data/db
-    networks:
-      - app-network
+  # db-recommendations:
+  #   image: mongo:6.0
+  #   container_name: db-recommendations
+  #   ports:
+  #     - "27020:27017"
+  #   volumes:
+  #     - db_recommendations_data:/data/db
+  #   networks:
+  #     - app-network
 
   backend-notifications:
     build: "./VivienStampfer/notifications"
     container_name: backend-notifications
     ports:
       - "3001:3001"
+    env_file:
+      - ./VivienStampfer/notifications/.env
     environment:
-      - DB_HOST=db-notifications
-      - DB_PORT=27017
+      # - DB_HOST=db-notifications
+      # - DB_PORT=27017
       - FRONTEND_URL=http://frontend:3000
-    depends_on:
-      - db-notifications
+    # depends_on:
+    #   - db-notifications
     networks:
       - app-network
 
-  db-notifications:
-    image: mongo:6.0
-    container_name: db-notifications
-    ports:
-      - "27021:27017"
-    volumes:
-      - db_notifications_data:/data/db
-    networks:
-      - app-network
+  # db-notifications:
+  #   image: mongo:6.0
+  #   container_name: db-notifications
+  #   ports:
+  #     - "27021:27017"
+  #   volumes:
+  #     - db_notifications_data:/data/db
+  #   networks:
+  #     - app-network
 
   # db-reviews:
   #   image: mongo:6.0.14-jammy

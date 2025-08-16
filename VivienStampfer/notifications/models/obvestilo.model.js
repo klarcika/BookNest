@@ -12,4 +12,4 @@ const ObvestiloSchema = new mongoose.Schema({
   datumPoslano:    { type: Date }
 }, { versionKey: false });
 
-export default mongoose.model("Obvestilo", ObvestiloSchema);
+export default mongoose.model("Obvestilo", ObvestiloSchema, "obvestila");
