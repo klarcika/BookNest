@@ -20,20 +20,8 @@ const RegisterPage = () => {
         setError('');
 
         try {
-            const response = await userApi.post('/register', {
-                username: formData.email,
-                password: formData.password,
-                name: formData.name,
-                role: 'user',
-            });
-
-            const { token } = response.data;
-            if (token) {
-                localStorage.setItem('token', token);
-                navigate('/profile');
-            } else {
-                navigate('/login');
-            }
+            await userApi.post('/register', formData);
+            navigate('/profile');
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed');
         }

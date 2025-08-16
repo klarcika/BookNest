@@ -2,44 +2,44 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 
 class User {
-    static async add(username, email, password, genrePreferences, notificationSettings, name, avatarUrl, bio) {
+    static async add(email, password, name) {
         try {
             const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
+            const hashedPw = await bcrypt.hash(password, saltRounds);
             const date = new Date().toJSON();
+            const id = `${email}_${date.replace(/[:.]/g, '-')}`; // Unikaten ID z varnim formatom
 
-            const id = email + "_" + date;
             const newUser = {
-                username: username,
-                email: email,
-                passwordHash: hashedPassword,
+                username: email,
+                email: email.toLowerCase(),
+                passwordHash: hashedPw,
                 preferences: {
-                    genrePreferences: genrePreferences,
-                    notificationSettings: notificationSettings
+                    genrePreferences: [],
+                    notificationSettings: { email: true }
                 },
                 profile: {
-                    name: name,
-                    avatarUrl: avatarUrl,
-                    bio: bio
+                    name: name || 'Unknown',
+                    avatarUrl: "https://placehold.co/100x100",
+                    bio: ""
                 },
+                role: "user",
+                refreshToken: null,
                 createdAt: date,
                 updatedAt: date
             };
 
-            db.collection("Users").doc(id).set(newUser);
-            return { message: 'Successful registration', user: newUser };
+            await db.collection("Users").doc(id).set(newUser);
+            return { message: 'Successful registration', user: newUser, id };
         } catch (error) {
             throw new Error('Error inserting user into database: ' + error.message);
         }
     }
-
     static async getById(id) {
         try {
-            const userRef = db.collection("Users").doc(id);
+            const userRef = db.collection('Users').doc(id);
             const response = await userRef.get();
-            const user = response.data();
-
-            return user;
+            if (!response.exists) throw new Error('User does not exist');
+            return { id: response.id, ...response.data() };
         } catch (error) {
             throw new Error('Error retrieving user from database: ' + error.message);
         }
@@ -51,12 +51,23 @@ class User {
             const response = await usersRef.get();
             const users = [];
             response.forEach((doc) => {
-                users.push(doc.data());
+                users.push({ ...doc.data(), id: doc.id });
             });
-
             return users;
         } catch (error) {
             throw new Error('Error retrieving users from database: ' + error.message);
+        }
+    }
+
+    static async getByEmail(email) {
+        try {
+            const usersRef = db.collection('Users');
+            const snapshot = await usersRef.where('email', '==', email.toLowerCase()).get();
+            if (snapshot.empty) throw new Error('User does not exist');
+            const userDoc = snapshot.docs[0];
+            return { id: userDoc.id, ...userDoc.data() };
+        } catch (error) {
+            throw new Error('Error retrieving user from database: ' + error.message);
         }
     }
 
@@ -65,8 +76,8 @@ class User {
             const userRef = db.collection("Users").doc(id);
             const response = await userRef.get();
             const user = response.data();
-
-            return user.email;
+            if (!user) throw new Error("User does not exist");
+            return { email: user.email };
         } catch (error) {
             throw new Error('Error retrieving email from database: ' + error.message);
         }
@@ -77,7 +88,7 @@ class User {
             const userRef = db.collection("Users").doc(id);
             const response = await userRef.get();
             const user = response.data();
-
+            if (!user) throw new Error("User does not exist");
             return user.profile;
         } catch (error) {
             throw new Error('Error retrieving profile from database: ' + error.message);
@@ -89,19 +100,18 @@ class User {
             const userRef = db.collection("Users").doc(id);
             const response = await userRef.get();
             const user = response.data();
-            if (user == undefined) {
-                throw new Error("User does not exist");
-            }
+            if (!user) throw new Error("User does not exist");
 
             const updatedUser = {
                 ...user,
                 ...updatedData,
+                updatedAt: new Date().toJSON()
             };
 
             await db.collection("Users").doc(id).set(updatedUser);
             return { message: 'User changes successful', user: updatedUser };
         } catch (error) {
-            throw new Error('Error inserting user into database: ' + error.message);
+            throw new Error('Error updating user: ' + error.message);
         }
     }
 
@@ -115,8 +125,8 @@ class User {
             const updatedUser = {
                 ...user,
                 preferences: {
-                    genrePreferences: genrePreferences ?? user.preferences.genrePreferences,
-                    notificationSettings: notificationSettings ?? user.preferences.notificationSettings
+                    genrePreferences: genrePreferences || user.preferences.genrePreferences,
+                    notificationSettings: notificationSettings || user.preferences.notificationSettings
                 },
                 updatedAt: new Date().toJSON()
             };
@@ -133,11 +143,8 @@ class User {
             const userRef = db.collection("Users").doc(id);
             const response = await userRef.get();
             const user = response.data();
-            if (user == undefined) {
-                throw new Error("User does not exist");
-            }
+            if (!user) throw new Error("User does not exist");
             await db.collection("Users").doc(id).delete();
-
             return { message: 'User deleted' };
         } catch (error) {
             throw new Error('Error deleting user from database: ' + error.message);
@@ -162,11 +169,20 @@ class User {
             if (!found) {
                 throw new Error("No users found for this email domain");
             }
-            
+
             await batch.commit();
             return { message: `${snapshot.size} users with email domain ${domain} deleted` };
         } catch (error) {
             throw new Error('Error deleting users by email domain: ' + error.message);
+        }
+    }
+    static async save(userData) {
+        try {
+            const userRef = db.collection('Users').doc(userData.id);
+            await userRef.set(userData, { merge: true });
+            return { id: userRef.id, ...userData };
+        } catch (error) {
+            throw new Error('Error saving user to database: ' + error.message);
         }
     }
 }

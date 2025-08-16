@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-
+// <NavLink to="/profile/:id" className={linkClass}>Profile</NavLink>
 
 const Navbar = () => {
     //<NavLink to="/register" className={linkClass}>Register</NavLink>
@@ -21,7 +21,7 @@ const Navbar = () => {
 
             <div className="flex gap-6">
                 <NavLink to="/login" className={linkClass}>Login</NavLink>
-                <NavLink to="/profile" className={linkClass}>Profile</NavLink>
+
             </div>
         </nav>
     )

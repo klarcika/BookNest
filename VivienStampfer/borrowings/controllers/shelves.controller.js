@@ -1,4 +1,20 @@
 import Shelves from "../models/shelves.model.js";
+const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
+    req.user = decoded; // Shranimo decoded podatke (npr. id, email) za kasnejšo uporabo
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+module.exports = { authenticateToken };
 
 export const getShelves = async (req, res) => {
   try {
