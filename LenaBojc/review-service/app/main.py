@@ -1,4 +1,5 @@
 import os
+import httpx
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request, status
@@ -38,6 +39,8 @@ async def shutdown():
 @app.post("/reviews",
         description="Creates a new review for a specific book and user. It checks if a review by that user for the book already exists, and if not, saves the new review with a timestamp to the database. It returns a success message with the review details, or an error if the review already exists or if saving fails.",
         response_model=ReviewCreated, 
+        summary="New review from user for a book",
+        tags=["Reviews"],
         status_code=status.HTTP_201_CREATED, 
         responses={
             201: {
@@ -90,6 +93,8 @@ async def new_review(payload: NewReviewIn):
 @app.post(
     "/comments",
     description="Creates a new comment for a specific book and user. It receives the comment data, adds a creation timestamp, saves the comment to the database, and returns a confirmation message with the saved comment details. If an error occurs during saving, it returns an error message.",
+    summary="New comment from user for a book",
+    tags=["Reviews"],
     response_model=CommentCreated,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -135,6 +140,8 @@ async def new_comment(payload: NewCommentIn):
 @app.put(
     "/reviews/{id}/text",
     description="Function updates the text of an existing review (identified by its ID) in the database. It sets the new review text and returns a success message with the updated review details, or an error if the review is not found or the update fails.",
+    summary="Update review text",
+    tags=["Reviews"],
     response_model=ReviewUpdated,
     status_code=status.HTTP_200_OK,
     responses={
@@ -223,6 +230,8 @@ async def add_review_to_star_rating(id: str, body: ReviewTextIn):
 @app.put(
     "/reviews/{id}/rating",
     description="Function updates the rating (star value) of an existing review in the database, identified by its ID. It sets the new rating and returns a success message with the updated review details, or an error if the review is not found or the update fails.",
+    summary="Update review rating",
+    tags=["Reviews"],
     response_model=ReviewUpdated,
     status_code=status.HTTP_200_OK,
     responses={
@@ -317,6 +326,8 @@ async def change_star_rating(id: str, body: RatingIn):
 @app.get(
     "/reviews/{id}",
     description="Function retrieves a specific review from the database using its unique ID. It returns the review details if found, or an error message if the review does not exist or if an error occurs during retrieval.",
+    summary="Get review by ID",
+    tags=["Reviews"],
     response_model=ReviewFetched,
     status_code=status.HTTP_200_OK,
     responses={
@@ -398,36 +409,67 @@ async def review_by_id(id: str):
 
 @app.get(
     "/books/{bookId}/reviews",
-    description="Function retrieves all reviews for a specific book, identified by its book ID. It returns a list of reviews sorted by creation date, or an error message if no reviews are found or if an error occurs during retrieval.",
+    summary="List reviews for a book",
+    description=(
+        "Retrieves all reviews for a given book and returns them sorted by creation time (newest first). "
+        "Validates the book exists via book-service before listing."
+    ),
+    tags=["Reviews"],
+    operation_id="allReviewsByBookId",
     response_model=ReviewsList,
+    response_model_exclude_none=True,
     status_code=status.HTTP_200_OK,
     responses={
         200: {
             "description": "Reviews fetched successfully",
             "content": {
                 "application/json": {
-                    "example": {
-                        "message": "Reviews fetched successfully",
-                        "data": {
-                            "items": [
-                                {
-                                    "id": "abc123",
-                                    "userId": "u1",
-                                    "bookId": "b1",
-                                    "rating": 5,
-                                    "review": "Great book!",
-                                    "createdAt": "2025-07-16T12:00:00Z"
-                                },
-                                {
-                                    "id": "def456",
-                                    "userId": "u2",
-                                    "bookId": "b1",
-                                    "rating": 4,
-                                    "review": "Enjoyed it.",
-                                    "createdAt": "2025-07-17T09:30:00Z"
+                    "examples": {
+                        "two_items": {
+                            "summary": "Two reviews",
+                            "value": {
+                                "message": "Reviews fetched successfully",
+                                "data": {
+                                    "items": [
+                                        {
+                                            "id": "abc123",
+                                            "userId": "u1",
+                                            "bookId": "b1",
+                                            "rating": 5,
+                                            "review": "Great book!",
+                                            "createdAt": "2025-07-16T12:00:00Z"
+                                        },
+                                        {
+                                            "id": "def456",
+                                            "userId": "u2",
+                                            "bookId": "b1",
+                                            "rating": 4,
+                                            "review": "Enjoyed it.",
+                                            "createdAt": "2025-07-17T09:30:00Z"
+                                        }
+                                    ],
+                                    "count": 2
                                 }
-                            ],
-                            "count": 2
+                            }
+                        },
+                        "single_item": {
+                            "summary": "One review",
+                            "value": {
+                                "message": "Reviews fetched successfully",
+                                "data": {
+                                    "items": [
+                                        {
+                                            "id": "xyz789",
+                                            "userId": "u9",
+                                            "bookId": "b1",
+                                            "rating": 3,
+                                            "review": "Decent.",
+                                            "createdAt": "2025-07-18T15:10:00Z"
+                                        }
+                                    ],
+                                    "count": 1
+                                }
+                            }
                         }
                     }
                 }
@@ -437,26 +479,50 @@ async def review_by_id(id: str):
             "description": "Bad request",
             "content": {
                 "application/json": {
-                    "example": {
-                        "message": "Bad request",
-                        "errors": [
-                            {
-                                "loc": ["path", "bookId"],
-                                "msg": "Invalid bookId",
-                                "type": "value_error"
+                    "examples": {
+                        "invalid_book_id": {
+                            "summary": "Invalid bookId format",
+                            "value": {
+                                "message": "Bad request",
+                                "errors": [
+                                    {"loc": ["path", "bookId"], "msg": "Invalid bookId", "type": "value_error"}
+                                ]
                             }
-                        ]
+                        }
                     }
                 }
             }
         },
         404: {
-            "description": "Book not found or no reviews for bookId",
+            "description": "Book not found or no reviews",
             "content": {
                 "application/json": {
-                    "example": {
-                        "message": "Book not found or no reviews for bookId='b1'"
+                    "examples": {
+                        "no_reviews": {
+                            "summary": "Book exists but no reviews",
+                            "value": {"message": "Book not found or no reviews for bookId='b1'"}
+                        },
+                        "missing_book": {
+                            "summary": "Book does not exist",
+                            "value": {"message": "Book with id='b1' not found"}
+                        }
                     }
+                }
+            }
+        },
+        502: {
+            "description": "Upstream book-service error",
+            "content": {
+                "application/json": {
+                    "example": {"message": "Error checking book existence in book-service"}
+                }
+            }
+        },
+        503: {
+            "description": "Book-service unavailable",
+            "content": {
+                "application/json": {
+                    "example": {"message": "Error connecting to book-service"}
                 }
             }
         },
@@ -464,9 +530,7 @@ async def review_by_id(id: str):
             "description": "Internal server error while listing reviews",
             "content": {
                 "application/json": {
-                    "example": {
-                        "message": "Internal server error while listing reviews"
-                    }
+                    "example": {"message": "Internal server error while listing reviews"}
                 }
             }
         }
@@ -474,6 +538,25 @@ async def review_by_id(id: str):
     name="allReviewsByBookId",
 )
 async def all_reviews_by_book_id(bookId: str):              #, limit: int = 20, skip: int = 0
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(f"http://backend-books:3032/books/{bookId}")
+            if resp.status_code == 404:
+                return JSONResponse(
+                    status_code=404,
+                    content={"message": f"Book with id='{bookId}' not found"},
+                )
+            elif resp.status_code != 200:
+                return JSONResponse(
+                    status_code=500,
+                    content={"message": "Error checking book existence in book-service"},
+                )
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Error connecting to book-service"},
+            )
+    
     try:
         cursor = (
             app.db[COLL]
@@ -503,6 +586,8 @@ async def all_reviews_by_book_id(bookId: str):              #, limit: int = 20, 
 @app.get(
     "/books/{bookId}/comments",
     description="Function retrieves all comments for a specific book, identified by its book ID. It returns a list of comments sorted by creation date, or an error message if no comments are found or if an error occurs during retrieval.",
+    summary="Get all comments for a book",
+    tags=["Reviews"],
     response_model=CommentsList,
     status_code=status.HTTP_200_OK,
     responses={
@@ -606,6 +691,8 @@ async def all_comments_by_book_id(bookId: str):
 @app.delete(
     "/comments/{id}",
     description="Function deletes a specific comment from the database using its unique ID. It returns a success message if the comment is deleted, or an error message if the comment is not found or if an error occurs during deletion.",
+    summary="Delete comment by ID",
+    tags=["Reviews"],
     response_model=Msg,
     status_code=status.HTTP_200_OK,
     responses={
@@ -679,6 +766,8 @@ async def remove_comment_by_id(id: str):
 @app.delete(
     "/reviews/{id}",
     description="Function deletes a specific review from the database using its unique ID. It returns a success message if the review is deleted, or an error message if the review is not found or if an error occurs during deletion.",
+    summary="Delete review by ID",
+    tags=["Reviews"],
     response_model=Msg,
     status_code=status.HTTP_200_OK,
     responses={
