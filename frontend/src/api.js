@@ -1,165 +1,52 @@
 import axios from 'axios';
 
-// Osnovna instanca za user-service
-const userApi = axios.create({
-    baseURL: 'http://localhost:3030', // user-service
+export const userApi = axios.create({
+    baseURL: 'http://localhost:3030/users',
+    withCredentials: true, // Omogoči pošiljanje HttpOnly cookijev
 });
 
-userApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-userApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Instanca za bookshelf-service
-const bookshelfApi = axios.create({
-    baseURL: 'http://localhost:3032', // bookshelf-service
+export const bookApi = axios.create({
+    baseURL: 'http://localhost:3031/books',
+    withCredentials: true,
 });
 
-bookshelfApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-bookshelfApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Instanca za recommendation-service
-const recommendationApi = axios.create({
-    baseURL: 'http://localhost:5005', // recommendation-service
+export const bookshelfApi = axios.create({
+    baseURL: 'http://localhost:3002/shelves',
+    withCredentials: true,
 });
 
-recommendationApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-recommendationApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Instanca za notification-service
-const notificationApi = axios.create({
-    baseURL: 'http://localhost:3001', // notification-service
+export const reviewApi = axios.create({
+    baseURL: 'http://localhost:3033/reviews',
+    withCredentials: true,
 });
 
-notificationApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-notificationApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Instanca za review-service
-const reviewApi = axios.create({
-    baseURL: 'http://localhost:3004', // review-service
+export const recommendationApi = axios.create({
+    baseURL: 'http://localhost:3034/recommendations',
+    withCredentials: true,
 });
 
-reviewApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-reviewApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Instanca za book-service
-const bookApi = axios.create({
-    baseURL: 'http://localhost:3002', // book-service
+export const notificationApi = axios.create({
+    baseURL: 'http://localhost:3035/notifications',
+    withCredentials: true,
 });
 
-bookApi.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+// Interceptor za osvežitev tokena
+[userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi].forEach((api) => {
+    api.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+            if (error.response?.status === 401 && !error.config._retry) {
+                error.config._retry = true;
+                try {
+                    await userApi.post('/refresh-token');
+                    return api(error.config); // Ponovi originalni zahtevek
+                } catch (refreshErr) {
+                    window.location.href = '/login';
+                    return Promise.reject(refreshErr);
+                }
+            }
+            return Promise.reject(error);
         }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+    );
+});
 
-bookApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-export { userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi };
