@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-//import jwtDecode from 'jwt-decode'; // Za dekodiranje JWT tokena
-import { api } from '../api';
+import { jwtDecode } from 'jwt-decode';
+import { userApi, bookApi, bookshelfApi, reviewApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
@@ -28,26 +28,23 @@ const ProfilePage = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
-            navigate('/login'); // Preusmeri na login, če ni tokena
+            navigate('/login');
             return;
         }
 
         const fetchData = async () => {
             try {
                 // Pridobi podatke o trenutnem uporabniku
-                const userRes = await api.get('/users/:id');
+                const userRes = await userApi.get('/users/me');
                 setUser(userRes.data);
                 setBookshelves(userRes.data.bookshelves || { wantToRead: [], currentlyReading: [], read: [] });
+                setReadingChallenge(userRes.data.readingChallenge || { goal: null, completed: 0 });
 
                 // Pridobi vse knjige
-                const booksRes = await api.get('/books');
+                const booksRes = await bookApi.get('/books');
                 setBooks(booksRes.data);
             } catch (err) {
                 setError(err.response?.data?.error || 'Failed to fetch data');
-                if (err.response?.status === 401) {
-                    localStorage.removeItem('token');
-                    navigate('/login');
-                }
             }
         };
 
@@ -67,7 +64,7 @@ const ProfilePage = () => {
             };
 
             // Posodobi police na backendu
-            await api.patch('/bookshelves', updatedShelves);
+            await bookshelfApi.patch('/bookshelves', updatedShelves);
             setBookshelves(updatedShelves);
 
             if (toShelf === 'read') {
@@ -85,7 +82,7 @@ const ProfilePage = () => {
 
     const handleReviewSubmit = async (bookId) => {
         try {
-            await api.post('/reviews', {
+            await reviewApi.post('/reviews', {
                 bookId,
                 rating: reviews[bookId]?.rating,
                 comment: reviews[bookId]?.comment,
@@ -100,7 +97,7 @@ const ProfilePage = () => {
         if (!challengeInput || isNaN(challengeInput)) return;
         const newChallenge = { goal: parseInt(challengeInput), completed: 0 };
         try {
-            await api.patch('/users/me/challenge', { goal: newChallenge.goal });
+            await userApi.patch('/users/me/challenge', { goal: newChallenge.goal });
             setReadingChallenge(newChallenge);
             setShowChallengeForm(false);
             setChallengeInput('');

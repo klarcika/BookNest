@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  seznamObvestil, enoObvestilo, dodajObvestilo, posodobiObvestilo, izbrisiObvestilo
+  seznamObvestil, enoObvestilo, dodajObvestilo, posodobiObvestilo, izbrisiObvestilo, izbrisiVsaZaUporabnika
 } from "../controllers/obvestilo.controller.js";
 
 const r = Router();
@@ -30,30 +30,9 @@ const r = Router();
  *       200:
  *         description: Uspešno pridobljen seznam obvestil
  *       500:
- *         description: Napaka na strežniku
+ *         description: Napaka pri pridobivanju obvestil
  */
 r.get("/", seznamObvestil);
-
-/**
- * @swagger
- * /obvestila/{id}:
- *   get:
- *     summary: Pridobi eno obvestilo
- *     description: Vrne podrobnosti določenega obvestila po ID-ju.
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID obvestila
- *     responses:
- *       200:
- *         description: Uspešno pridobljeno obvestilo
- *       404:
- *         description: Obvestilo ni najdeno
- */
-r.get("/:id", enoObvestilo);
 
 /**
  * @swagger
@@ -79,18 +58,68 @@ r.get("/:id", enoObvestilo);
  *               status:
  *                 type: string
  *                 enum: [vrsta, poslano, napaka, prebrano]
+ *               knjigaId:
+ *                 type: string
+ *               izzivId:
+ *                 type: string
  *               podatki:
  *                 type: object
- *                 description: Dodatni podatki odvisni od tipa
+ *                 description: Dodatni podatki glede na tip
  *     responses:
  *       201:
  *         description: Obvestilo uspešno ustvarjeno
  *       400:
- *         description: Manjkajo obvezni podatki
+ *         description: Manjkajo obvezni podatki ali napačna kombinacija polj
  *       500:
- *         description: Napaka na strežniku
+ *         description: Napaka pri ustvarjanju obvestila
  */
 r.post("/", dodajObvestilo);
+
+/**
+ * @swagger
+ * /obvestila/po-uporabniku/{uporabnikId}:
+ *   delete:
+ *     summary: Izbriši vsa obvestila za uporabnika
+ *     description: Izbriše vsa obvestila, ki pripadajo določenemu uporabniku.
+ *     parameters:
+ *       - in: path
+ *         name: uporabnikId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID uporabnika
+ *     responses:
+ *       200:
+ *         description: Obvestila uspešno izbrisana
+ *       400:
+ *         description: Manjka uporabnikId
+ *       500:
+ *         description: Napaka pri množičnem brisanju obvestil
+ */
+r.delete("/po-uporabniku/:uporabnikId", izbrisiVsaZaUporabnika);
+
+/**
+ * @swagger
+ * /obvestila/{id}:
+ *   get:
+ *     summary: Pridobi eno obvestilo
+ *     description: Vrne podrobnosti določenega obvestila po ID-ju.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID obvestila
+ *     responses:
+ *       200:
+ *         description: Uspešno pridobljeno obvestilo
+ *       404:
+ *         description: Obvestilo ni najdeno
+ *       500:
+ *         description: Napaka pri pridobivanju obvestila
+ */
+r.get("/:id", enoObvestilo);
 
 /**
  * @swagger
@@ -117,7 +146,7 @@ r.post("/", dodajObvestilo);
  *       404:
  *         description: Obvestilo ni najdeno
  *       500:
- *         description: Napaka na strežniku
+ *         description: Napaka pri posodabljanju obvestila
  */
 r.put("/:id", posodobiObvestilo);
 
@@ -139,7 +168,7 @@ r.put("/:id", posodobiObvestilo);
  *       404:
  *         description: Obvestilo ni najdeno
  *       500:
- *         description: Napaka na strežniku
+ *         description: Napaka pri brisanju obvestila
  */
 r.delete("/:id", izbrisiObvestilo);
 

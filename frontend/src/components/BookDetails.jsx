@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import jwtDecode from "jwt-decode";
-import { api } from "../api";
+import { bookApi, userApi, reviewApi } from "../api";
 
 const BookDetails = () => {
     const { id } = useParams();
@@ -24,19 +24,15 @@ const BookDetails = () => {
         const fetchData = async () => {
             try {
                 // Pridobi podatke o knjigi
-                const bookRes = await api.get(`/books/${id}`);
+                const bookRes = await bookApi.get(`/books/${id}`);
                 setBook(bookRes.data);
                 setComments(bookRes.data.comments || []);
 
                 // Pridobi podatke o trenutnem uporabniku
-                const userRes = await api.get("/users/me");
+                const userRes = await userApi.get("/users/me");
                 setUser(userRes.data);
             } catch (err) {
                 setError(err.response?.data?.error || "Failed to fetch data");
-                if (err.response?.status === 401) {
-                    localStorage.removeItem("token");
-                    navigate("/login");
-                }
             }
         };
 
@@ -48,7 +44,7 @@ const BookDetails = () => {
     const handleAddComment = async () => {
         if (!newComment.trim()) return;
         try {
-            const response = await api.post("/reviews", {
+            const response = await reviewApi.post("/reviews", {
                 bookId: id,
                 text: newComment,
             });
@@ -62,7 +58,7 @@ const BookDetails = () => {
     const handleEditComment = async (commentId) => {
         if (!editCommentText.trim()) return;
         try {
-            await api.patch(`/reviews/${commentId}`, { text: editCommentText });
+            await reviewApi.patch(`/reviews/${commentId}`, { text: editCommentText });
             setComments(comments.map((c) => (c._id === commentId ? { ...c, text: editCommentText } : c)));
             setEditCommentId(null);
             setEditCommentText("");
@@ -74,7 +70,7 @@ const BookDetails = () => {
     const handleDeleteComment = async (commentId) => {
         if (!window.confirm("Are you sure you want to delete this comment?")) return;
         try {
-            await api.delete(`/reviews/${commentId}`);
+            await reviewApi.delete(`/reviews/${commentId}`);
             setComments(comments.filter((c) => c._id !== commentId));
         } catch (err) {
             setError(err.response?.data?.error || "Failed to delete comment");
