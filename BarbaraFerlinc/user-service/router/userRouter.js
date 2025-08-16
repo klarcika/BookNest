@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controller/userController');
-const {authenticateToken, refreshToken} = require('../middleware/auth');
 
 /**
  * @swagger
@@ -75,7 +74,7 @@ router.post('/login', userController.loginUser);
  *               $ref: '#/components/schemas/User'
  */
 router.post('/id', userController.findUser);
-router.get('/me', authenticateToken, userController.getCurrentUser);
+router.get('/me', userController.authenticateToken, userController.getCurrentUser);
 
 /**
  * @swagger
@@ -93,7 +92,7 @@ router.get('/me', authenticateToken, userController.getCurrentUser);
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/allUsers',authenticateToken, userController.allUsers);
+router.get('/allUsers', userController.authenticateToken, userController.allUsers);
 
 /**
  * @swagger
@@ -117,7 +116,7 @@ router.get('/allUsers',authenticateToken, userController.allUsers);
  *               type: string
  *               example: "john@example.com"
  */
-router.get('/email/:id',authenticateToken, userController.findEmail);
+router.get('/email/:id', userController.authenticateToken, userController.findEmail);
 
 /**
  * @swagger
@@ -151,7 +150,7 @@ router.get('/email/:id',authenticateToken, userController.findEmail);
  *                   type: string
  *                   example: "Avid book lover and writer."
  */
-router.get('/profile/:id',authenticateToken, userController.findProfile);
+router.get('/profile/:id', userController.authenticateToken, userController.findProfile);
 
 /**
  * @swagger
@@ -180,7 +179,7 @@ router.get('/profile/:id',authenticateToken, userController.findProfile);
  *             schema:
  *               $ref: '#/components/schemas/User'
  */
-router.put('/:id',authenticateToken, userController.changeUser);
+router.put('/:id', userController.authenticateToken, userController.changeUser);
 
 /**
  * @swagger
@@ -212,7 +211,7 @@ router.put('/:id',authenticateToken, userController.changeUser);
  *       200:
  *         description: Preferences uspešno posodobljene
  */
-router.put('/preferences/:id', authenticateToken,userController.changeUserPreferences);
+router.put('/preferences/:id',  userController.authenticateToken,userController.changeUserPreferences);
 
 /**
  * @swagger
@@ -231,7 +230,7 @@ router.put('/preferences/:id', authenticateToken,userController.changeUserPrefer
  *       200:
  *         description: Uporabnik izbrisan
  */
-router.delete('/:id',authenticateToken, userController.deleteUser);
+router.delete('/:id', userController.authenticateToken, userController.deleteUser);
 
 
 /**
@@ -251,8 +250,8 @@ router.delete('/:id',authenticateToken, userController.deleteUser);
  *       200:
  *         description: Uporabniki izbrisani
  */
-router.delete('/emailDomain/:domain',authenticateToken, userController.deleteUsersByEmailDomain);
-router.post('/refresh-token', refreshToken); // Dodan endpoint
+router.delete('/emailDomain/:domain', userController.authenticateToken, userController.deleteUsersByEmailDomain);
+router.post('/refresh-token',  userController.refreshToken); // Dodan endpoint
 
 
 module.exports = router;
