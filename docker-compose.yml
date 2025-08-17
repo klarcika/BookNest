@@ -131,10 +131,8 @@ services:
       # DB_NAME: "booknest_reviews"
       # COLLECTION_NAME: ${COLLECTION_NAME}
       FRONTEND_URL: "http://frontend:3000"
-      USERS_API_URL: "http://backend-users:3030"
+      # USERS_API_URL: "http://backend-users:3030"
       BOOKS_API_URL: "http://backend-books:3032"
-      RECOMMENDATIONS_API_URL: "http://backend-recommendations:3003"
-      NOTIFICATIONS_API_URL: "http://backend-notifications:3001"
     networks: 
       - app-network
 
@@ -150,8 +148,7 @@ services:
       # DB_NAME: ${DB_NAME}
       # COLLECTION_NAME: ${COLLECTION_NAME}
       FRONTEND_URL: http://frontend:3000
-      USERS_API_URL: http://backend-users:3030
-      BOOKS_API_URL: http://backend-books:3032
+      SHELVES_API_URL: http://backend-shelves:3005
     networks:
       - app-network
 
@@ -179,6 +176,7 @@ services:
       - NOTIFICATIONS_API_URL=http://backend-notifications:3001
       - REVIEWS_API_URL=http://backend-reviews:3002
       - STATISTICS_API_URL=http://backend-statistics:3004
+      - SHELVES_API_URL=http://backend-shelves:3005
     depends_on:
       - backend-books
       - backend-users
@@ -186,15 +184,16 @@ services:
       - backend-notifications
       - backend-reviews
       - backend-statistics
+      - backend-shelves
     networks:
       - app-network
 
 networks:
   app-network:
 
-volumes:
-  db_books_data:
-  db_users_data:
-  db_recommendations_data:
-  db_notifications_data:
-  db_reviews_data:
+# volumes:
+#   db_books_data:
+#   db_users_data:
+#   db_recommendations_data:
+#   db_notifications_data:
+#   db_reviews_data:

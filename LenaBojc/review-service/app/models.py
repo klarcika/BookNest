@@ -17,12 +17,21 @@ class NewCommentIn(BaseModel):
     comment: str = Field(..., min_length=1, max_length=10_000, example="Great comment!")
 
 class ReviewTextIn(BaseModel):
+    userId: str = Field(..., min_length=1, example="u1")
     review: str = Field(..., min_length=1, max_length=10_000, example="Great book!")
 
 class RatingIn(BaseModel):
+    userId: str = Field(..., min_length=1, example="u1")
     rating: int = Field(..., ge=1, le=5, example=5)
     # review: Optional[str] = Field(None, min_length=1, max_length=10_000)
 
+class RetrieveReviewIn(BaseModel):
+    userId: str = Field(..., min_length=1, example="u1")
+    bookId: str = Field(..., min_length=1, example="b1")
+
+class CommentDeleteIn(BaseModel):
+    userId: str = Field(..., min_length=1, example="u1")
+    id: str = Field(..., min_length=1, example="c1")
 
 # ----- OUT -----
 
@@ -51,6 +60,8 @@ class CommentOut(BaseModel):
     def str_id(cls, v):
         return str(v)
 
+class AverageScoreData(BaseModel):
+    average: float
 
 # ----- CREATED -----
 
@@ -88,3 +99,7 @@ class CommentsList(BaseModel):
 
 class Msg(BaseModel):
     message: str
+
+class AverageScore(BaseModel):
+    message: str
+    data: AverageScoreData
