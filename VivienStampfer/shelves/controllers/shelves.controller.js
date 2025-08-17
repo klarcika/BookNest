@@ -1,5 +1,6 @@
 import Shelves from "../models/shelves.model.js";
 import jwt from 'jsonwebtoken';
+const BOOKS_API_URL = process.env.BOOKS_API_URL || "http://localhost:3032";
 
 const authenticateToken = (req, res, next) => {
   const token = req.cookies.token;
@@ -210,5 +211,40 @@ export const izbrisiShelvesByUser = async (req, res) => {
     res.status(200).json({ ok: true, message: "Police izbrisane po userId" });
   } catch (err) {
     res.status(500).json({ message: "Napaka pri brisanju polic po userId", error: err.message });
+  }
+};
+export const getReadBooksForUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const doc = await Shelves.findOne({ userId }).lean();
+    if (!doc) return res.status(404).json({ message: "Police niso najdene" });
+
+    const readItems = doc.shelves?.read || [];
+
+    if (readItems.length === 0) {
+      return res.status(404).json({ message: "Na polici 'read' ni knjig" });
+    }
+
+    const results = await Promise.all(
+      readItems.map(async (it) => {
+        try {
+          const r = await fetch(`${BOOKS_API_URL}/books/${it.bookId}`);
+          if (!r.ok) throw new Error("Ni najdeno");
+          const book = await r.json();
+          return { ...book, dateAdded: it.dateAdded };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const found = results.filter(Boolean);
+    if (found.length === 0) {
+      return res.status(404).json({ message: "Knjige v read niso najdene iz book-service" });
+    }
+
+    res.json(found);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
