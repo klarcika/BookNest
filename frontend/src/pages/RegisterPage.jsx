@@ -4,9 +4,9 @@ import { userApi } from '../api';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
-        name: '',
         email: '',
         password: '',
+        name: '',
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -18,10 +18,14 @@ const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        // tu se more dat neki loading
 
         try {
-            await userApi.post('/register', formData);
-            navigate('/profile');
+            const response = await userApi.post('/register', formData, { withCredentials: true });
+            if (response.status === 200) {
+                const { id } = response.data.user;
+                navigate(`/profile/${id}`);
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed');
         }

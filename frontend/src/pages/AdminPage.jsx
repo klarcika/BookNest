@@ -16,7 +16,7 @@ const AdminPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        /*const token = localStorage.getItem('token');
         if (!token) {
             navigate('/login');
             return;
@@ -34,7 +34,7 @@ const AdminPage = () => {
             localStorage.removeItem('token');
             navigate('/login');
             return;
-        }
+        }*/
 
         const fetchData = async () => {
             try {

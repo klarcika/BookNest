@@ -1,4 +1,7 @@
 const db = require('../db');
+require('dotenv').config();
+
+const reviewsApi = process.env.REVIEWS_API_URL || 'http://localhost:3002';
 
 class Book {
     static async add(
@@ -15,8 +18,9 @@ class Book {
     ) {
         try {
             const date = new Date().toJSON();
-            const id = title + "_" + date;
+            const id = title.toLowerCase().replace(/\s+/g, '') + "_" + date.replace(/[:.]/g, '-');
             const newBook = {
+                id: id,
                 title: title,
                 author: author,
                 genres: genres,
@@ -24,7 +28,7 @@ class Book {
                 isbn: isbn,
                 description: description,
                 coverUrl: coverUrl,
-                createdAt: date,
+                createdAt: date.replace(/[:.]/g, '-'),
                 averageRating: averageRating,
                 ratingsCount: ratingsCount,
                 pages: pages,
@@ -43,8 +47,8 @@ class Book {
             const batch = db.batch();
 
             books.forEach(book => {
-                const id = book.title + "_" + date;
-                const bookData = { ...book, createdAt: date, updatedAt: date };
+                const id = book.title.toLowerCase().replace(/\s+/g, '') + "_" + date.replace(/[:.]/g, '-');
+                const bookData = { ...book, createdAt: date.replace(/[:.]/g, '-'), updatedAt: date.replace(/[:.]/g, '-') };
                 const docRef = db.collection("Books").doc(id);
                 batch.set(docRef, bookData);
             });
@@ -119,8 +123,11 @@ class Book {
         }
     }
 
-    static async updateRating(id, averageRating) {
+    static async updateRating(id) {
         try {
+            const response = await fetch(`${reviewsApi}/books/${id}/averageRating`);
+            const averageRating = await response.json();
+
             await db.collection("Books").doc(id).update({
                 averageRating: averageRating,
                 updatedAt: new Date().toJSON()

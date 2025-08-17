@@ -8,7 +8,7 @@ const NotificationsPage = () => {
     const [error, setError] = useState('');
     const [userId, setUserId] = useState('');
 
-    useEffect(() => {
+    /*useEffect(() => {
         const token = document.cookie
             .split('; ')
             .find(row => row.startsWith('token='))
@@ -25,7 +25,7 @@ const NotificationsPage = () => {
             setError('No token found');
             setLoading(false);
         }
-    }, []);
+    }, []);*/
 
     const fetchNotifications = async (userId) => {
         if (!userId) {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+// link do login je skrit ko je uporabnik prijavljen
 
 const Navbar = () => {
     //<NavLink to="/register" className={linkClass}>Register</NavLink>

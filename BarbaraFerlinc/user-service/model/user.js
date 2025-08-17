@@ -1,40 +1,52 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
+
+const statisticsApi = process.env.STATISTICS_API_URL || 'http://localhost:3004';
 
 class User {
     static async add(email, password, name) {
         try {
-            const saltRounds = 10;
-            const hashedPw = await bcrypt.hash(password, saltRounds);
             const date = new Date().toJSON();
-            const id = `${email}_${date.replace(/[:.]/g, '-')}`; // Unikaten ID z varnim formatom
+            const id = email + "_" + date.replace(/[:.]/g, '-');
 
             const newUser = {
+                id: id,
                 username: email,
                 email: email.toLowerCase(),
-                passwordHash: hashedPw,
-                preferences: {
-                    genrePreferences: [],
-                    notificationSettings: { email: true }
-                },
+                passwordHash: password,
+                genrePreferences: [],
                 profile: {
                     name: name || 'Unknown',
                     avatarUrl: "https://placehold.co/100x100",
                     bio: ""
                 },
                 role: "user",
-                refreshToken: null,
-                createdAt: date,
-                updatedAt: date
+                //refreshToken: null,
+                createdAt: date.replace(/[:.]/g, '-'),
+                updatedAt: date.replace(/[:.]/g, '-')
             };
+            console.log(newUser);
 
             await db.collection("Users").doc(id).set(newUser);
-            return { message: 'Successful registration', user: newUser, id };
+            return newUser;
         } catch (error) {
             throw new Error('Error inserting user into database: ' + error.message);
         }
     }
+
     static async getById(id) {
+        try {
+            const userRef = db.collection("Users").doc(id);
+            const response = await userRef.get();
+            const user = response.data();
+
+            return user;
+        } catch (error) {
+            throw new Error('Error retrieving user from database: ' + error.message);
+        }
+    }
+    /*static async getById(id) {
         try {
             const userRef = db.collection('Users').doc(id);
             const response = await userRef.get();
@@ -43,7 +55,7 @@ class User {
         } catch (error) {
             throw new Error('Error retrieving user from database: ' + error.message);
         }
-    }
+    }*/
 
     static async all() {
         try {
@@ -61,6 +73,22 @@ class User {
 
     static async getByEmail(email) {
         try {
+            const querySnapshot = await db.collection("Users").where("email", "==", email.toLowerCase()).get();
+
+            if (querySnapshot.empty) {
+                return null;
+            }
+
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data();
+
+            return userData;
+        } catch (error) {
+            throw new Error('Error retrieving user from database: ' + error.message);
+        }
+    }
+    /*static async getByEmail(email) {
+        try {
             const usersRef = db.collection('Users');
             const snapshot = await usersRef.where('email', '==', email.toLowerCase()).get();
             if (snapshot.empty) throw new Error('User does not exist');
@@ -69,7 +97,7 @@ class User {
         } catch (error) {
             throw new Error('Error retrieving user from database: ' + error.message);
         }
-    }
+    }*/
 
     static async getEmail(id) {
         try {
@@ -115,19 +143,24 @@ class User {
         }
     }
 
-    static async updatePreferences(id, genrePreferences, notificationSettings) {
+    static async updatePreferences(id) {
         try {
             const userRef = db.collection("Users").doc(id);
             const response = await userRef.get();
             const user = response.data();
             if (!user) throw new Error("User does not exist");
 
+            const response2 = await fetch(`${statisticsApi}/goals/${id}/genres`);
+            const { distribution } = await response2.json();
+
+            const topGenres = Object.entries(distribution)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3)
+                .map(([genre]) => genre);
+
             const updatedUser = {
                 ...user,
-                preferences: {
-                    genrePreferences: genrePreferences || user.preferences.genrePreferences,
-                    notificationSettings: notificationSettings || user.preferences.notificationSettings
-                },
+                genrePreferences: topGenres || user.genrePreferences,
                 updatedAt: new Date().toJSON()
             };
 

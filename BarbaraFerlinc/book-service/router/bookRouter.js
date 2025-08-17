@@ -203,17 +203,6 @@ router.put('/:id', bookController.changeBook);
  *         schema:
  *           type: string
  *         description: ID of the book to update rating
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               averageRating:
- *                 type: number
- *                 format: float
- *                 example: 4.7
  *     responses:
  *       200:
  *         description: Book rating updated successfully
