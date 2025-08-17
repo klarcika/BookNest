@@ -6,7 +6,7 @@ export const userApi = axios.create({
 });
 
 export const bookApi = axios.create({
-    baseURL: 'http://localhost:3031/books',
+    baseURL: 'http://localhost:3032/books',
     withCredentials: true,
 });
 
@@ -21,12 +21,12 @@ export const reviewApi = axios.create({
 });
 
 export const recommendationApi = axios.create({
-    baseURL: 'http://localhost:3034/recommendations',
+    baseURL: 'http://localhost:3003/recommendations',
     withCredentials: true,
 });
 
 export const notificationApi = axios.create({
-    baseURL: 'http://localhost:3035/notifications',
+    baseURL: 'http://localhost:3001/obvestila',
     withCredentials: true,
 });
 

@@ -37,7 +37,7 @@ async def shutdown_db_client():
 @app.post(
     "/goals",
     description=(
-        "Create a reading goal for the current calendar year. "
+        "Create a reading goal for the current calendar year and add any already read books from this year. "
         "If a goal for this user already exists for the current year, returns 409 (Conflict)."
     ),
     summary="Create a new reading goal",
@@ -137,8 +137,23 @@ async def create_user_goal(body: GoalIn):
         created = await coll.find_one({"_id": ins.inserted_id}) 
         out = _to_out(created)
         
-        # SHELVES_API_URL: check if any books on READ shelf and add them to books
-        # SHELVES_API_URL/shelves/{userId}/read, vrne List[BookRef]
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{SHELVES_API_URL}/shelves/{body.userId}/read/books")
+            if resp.status_code == 200:
+                books = resp.json()
+                filtered_books = [
+                    book for book in books
+                    if datetime.fromisoformat(book["dateAdded"].replace("Z", "+00:00")).year == year
+                ]
+                await coll.update_one(
+                    {"_id": ins.inserted_id},
+                    {
+                        "$set": {
+                            "books": filtered_books,
+                            "completedBooks": len(filtered_books)
+                        }
+                    }
+                )
 
         return {
             "message": "Goal created successfully",            
