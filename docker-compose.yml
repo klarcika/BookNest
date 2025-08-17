@@ -17,16 +17,6 @@ services:
     networks:
       - app-network
 
-  # db-books:
-  #   image: mongo:6.0
-  #   container_name: db-books
-  #   ports:
-  #     - "27018:27017"
-  #   volumes:
-  #     - db_books_data:/data/db
-  #   networks:
-  #     - app-network
-
   backend-users:
     build: "./BarbaraFerlinc/user-service"
     container_name: backend-users
@@ -42,16 +32,6 @@ services:
     #   - db-users
     networks:
       - app-network
-
-  # db-users:
-  #   image: mongo:6.0
-  #   container_name: db-users
-  #   ports:
-  #     - "27019:27017"
-  #   volumes:
-  #     - db_users_data:/data/db
-  #   networks:
-  #     - app-network
 
   backend-recommendations:
     build: "KlaraKirbis/recommendation-service"
@@ -69,16 +49,6 @@ services:
     networks:
       - app-network
 
-  # db-recommendations:
-  #   image: mongo:6.0
-  #   container_name: db-recommendations
-  #   ports:
-  #     - "27020:27017"
-  #   volumes:
-  #     - db_recommendations_data:/data/db
-  #   networks:
-  #     - app-network
-
   backend-notifications:
     build: "./VivienStampfer/notifications"
     container_name: backend-notifications
@@ -94,30 +64,6 @@ services:
     #   - db-notifications
     networks:
       - app-network
-
-  # db-notifications:
-  #   image: mongo:6.0
-  #   container_name: db-notifications
-  #   ports:
-  #     - "27021:27017"
-  #   volumes:
-  #     - db_notifications_data:/data/db
-  #   networks:
-  #     - app-network
-
-  # db-reviews:
-  #   image: mongo:6.0.14-jammy
-  #   command: ["mongod", "--bind_ip_all"]
-  #   restart: unless-stopped
-  #   volumes:
-  #     - db_reviews_data:/data/db
-  #   # healthcheck:
-  #   #   test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017", "--eval", "db.adminCommand({ ping: 1 })"]
-  #   #   interval: 5s
-  #   #   timeout: 3s
-  #   #   retries: 30
-  #   networks:
-  #     - app-network
 
   backend-reviews:
     build: "./LenaBojc/review-service"
@@ -190,10 +136,3 @@ services:
 
 networks:
   app-network:
-
-# volumes:
-#   db_books_data:
-#   db_users_data:
-#   db_recommendations_data:
-#   db_notifications_data:
-#   db_reviews_data:
