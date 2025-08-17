@@ -1,5 +1,6 @@
 import Obvestilo from "../models/obvestilo.model.js";
 const STATISTICS_API_URL = process.env.STATISTICS_API_URL || "http://backend-statistics:3004";
+const QUOTE_API_URL = process.env.QUOTE_API_URL;
 
 export const seznamObvestil = async (req, res) => {
   try {
@@ -36,11 +37,22 @@ export const dodajObvestilo = async (req, res) => {
       if (!knjigaId || !podatki?.naslovKnjige || !podatki?.avtor) {
         return res.status(400).json({ sporocilo: "Za tip novaKnjiga so obvezni knjigaId, naslovKnjige in avtor" });
       }
+      let citat = null;
+      try {
+        const r = await fetch(QUOTE_API_URL);
+        if (r.ok) {
+          const json = await r.json();
+          citat = json.quote;
+        }
+      } catch (e) {
+        console.error("Napaka pri pridobivanju citata:", e.message);
+      }
       vsebina = {
         knjigaId,
         naslovKnjige: podatki.naslovKnjige,
         avtor: podatki.avtor,
-        sporocilo: `Dodana je nova knjiga: ${podatki.naslovKnjige}`
+        sporocilo: `Dodana je nova knjiga: ${podatki.naslovKnjige}`,
+        citat
       };
     }
     if (tip === "recenzijaPrijatelja") {
@@ -62,6 +74,7 @@ export const dodajObvestilo = async (req, res) => {
 
       let targetBooks = null;
       let completedBooks = null;
+      let citat = null;
 
       try {
         const r = await fetch(`${STATISTICS_API_URL}/goals/user/${uporabnikId}`);
@@ -74,13 +87,24 @@ export const dodajObvestilo = async (req, res) => {
         console.error("Napaka pri pridobivanju podatkov iz statistics:", e.message);
       }
 
+      try {
+        const r = await fetch(QUOTE_API_URL);
+        if (r.ok) {
+          const json = await r.json();
+          citat = json.quote;
+        }
+      } catch (e) {
+        console.error("Napaka pri pridobivanju citata:", e.message);
+      }
+
       vsebina = {
         izzivId,
         nazivIzziva: podatki.nazivIzziva,
         status: podatki.status,
         targetBooks,
         completedBooks,
-        sporocilo: `Rok za dokončanje izziva "${podatki.nazivIzziva}" se izteče kmalu`
+        sporocilo: `Rok za dokončanje izziva "${podatki.nazivIzziva}" se izteče kmalu`,
+        citat
       };
     }
 
