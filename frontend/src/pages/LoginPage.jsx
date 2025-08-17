@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { userApi } from '../api';
 
 const LoginPage = () => {
@@ -10,12 +10,15 @@ const LoginPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // tu se more dodat neki loading
+        
         try {
-            const response = await userApi.post('/login', { email, password });
-            console.log('Login successful:', response.data);
-            const { id: userId } = response.data.user; // Izvleci userId
-            localStorage.setItem('userId', userId); // Shranimo v localStorage
-            navigate(`/profile/${userId}`);
+            const response = await userApi.post('/login', { email, password }, { withCredentials: true });
+            if (response.status === 200) {
+                const { id } = response.data.user;
+                //localStorage.setItem('userId', id); // Shranimo v localStorage
+                navigate(`/profile/${id}`);
+            }
         } catch (err) {
             console.error('Login error:', err.response?.data);
             setError(err.response?.data?.error || 'Login failed');
@@ -51,6 +54,12 @@ const LoginPage = () => {
                     <button type="submit" className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700">
                         Login
                     </button>
+                    <div className="w-full rounded-lg px-4 py-3 mt-2 text-base">
+                        <p className="text-md">Don't have an account yet?</p>
+                        <Link to="/register" className="text-xl underline text-blue-700 items-center">
+                            Register here
+                        </Link>
+                    </div>
                 </form>
             </div>
         </div>

@@ -11,7 +11,8 @@ services:
     environment:
       # - DB_HOST=db-books
       # - DB_PORT=27017
-      - FRONTEND_URL=http://frontend:3000
+      FRONTEND_URL: http://frontend:3000
+      REVIEWS_API_URL: http://backend-reviews:3002
     # depends_on:
     #   - db-books
     networks:
@@ -37,7 +38,8 @@ services:
     environment:
       # - DB_HOST=db-users
       # - DB_PORT=27017
-      - FRONTEND_URL=http://frontend:3000
+      FRONTEND_URL: http://frontend:3000
+      STATISTICS_API_URL: http://backend-statistics:3004
     # depends_on:
     #   - db-users
     networks:

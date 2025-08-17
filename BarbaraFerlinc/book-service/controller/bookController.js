@@ -139,14 +139,13 @@ async function changeBook(req, res) {
 
 async function changeBookRating(req, res) {
   const { id } = req.params;
-  const { rating } = req.body;
 
   if (!id) {
     return res.status(400).send({ error: "Id is required." });
   }
 
   try {
-    const response = await Book.changeRating(id, rating);
+    const response = await Book.changeRating(id);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ details: error.message });
