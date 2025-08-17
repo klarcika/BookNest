@@ -17,6 +17,7 @@ load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 DB_NAME = os.getenv("DB_NAME")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+SHELVES_API_URL = os.getenv("SHELVES_API_URL")
 
 app = FastAPI(title="Statistics Service", version="1.0")
 
@@ -36,9 +37,11 @@ async def shutdown_db_client():
 @app.post(
     "/goals",
     description=(
-        "Create a reading goal for the *current calendar year*. "
+        "Create a reading goal for the current calendar year. "
         "If a goal for this user already exists for the current year, returns 409 (Conflict)."
     ),
+    summary="Create a new reading goal",
+    tags=["Statistics"],
     response_model=GoalCreated,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -132,7 +135,11 @@ async def create_user_goal(body: GoalIn):
     try:
         ins = await coll.insert_one(doc)                        
         created = await coll.find_one({"_id": ins.inserted_id}) 
-        out = _to_out(created)                                   
+        out = _to_out(created)
+        
+        # SHELVES_API_URL: check if any books on READ shelf and add them to books
+        # SHELVES_API_URL/shelves/{userId}/read, vrne List[BookRef]
+
         return {
             "message": "Goal created successfully",            
             "data": out,                                        
@@ -150,6 +157,8 @@ async def create_user_goal(body: GoalIn):
         "Stores userId, book details, optional source goal ID, and timestamp. "
         "Prevents duplicate entries per (userId, bookId)."
     ),
+    summary="Log a read book",
+    tags=["Statistics"],
     response_model=ReadBookCreated,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -294,6 +303,8 @@ async def log_read_book(body: ReadBookIn):
         "Update the targetBooks of an existing reading goal (identified by its ID). "
         "Returns the updated goal or an error if not found."
     ),
+    summary="Update number of books in reading goal",
+    tags=["Statistics"],
     response_model=GoalCreated,
     status_code=status.HTTP_200_OK,
     responses={
@@ -393,6 +404,8 @@ async def change_user_goal(id: str, body: GoalTargetIn):
         "Validates that the provided userId matches the goal owner. "
         "Prevents adding the same book twice."
     ),
+    summary="Add a book to a reading goal list",
+    tags=["Statistics"],
     response_model=GoalCreated,
     status_code=status.HTTP_200_OK,
     responses={
@@ -540,6 +553,8 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
 @app.get(
     "/goals/user/{userId}",
     description="Get the current reading goal for a user, identified by their userId.",
+    summary="Get user's reading goal",
+    tags=["Statistics"],
     response_model=GoalCreated,
     status_code=status.HTTP_200_OK,
     responses={
@@ -604,6 +619,8 @@ async def get_goal_by_userid(userId: str):
 @app.get(
     "/goals/{id}/pages",
     description="Calculate the total number of pages read in all books of a goal.",
+    summary="Get total pages read in a goal",
+    tags=["Statistics"],
     status_code=status.HTTP_200_OK,
     responses={
         200: {
@@ -679,8 +696,13 @@ async def read_pages_in_goal(id: str):
         )
 
 @app.get(
-    "/goals/{id}/genres",
-    description="Calculate the percentage of genres across all books in a goal.",
+    "/goals/{userId}/genres",
+    description=(
+        "Calculate the percentage of genres across all books in the **current year's** reading goal "
+        "for the specified userId. The goal is selected by (userId, current calendar year)."
+    ),
+    summary="Get genre distribution for a user's current-year goal",
+    tags=["Statistics"],
     status_code=status.HTTP_200_OK,
     responses={
         200: {
@@ -698,22 +720,20 @@ async def read_pages_in_goal(id: str):
                 }
             }
         },
-        400: {
-            "description": "Bad request (invalid id)",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "message": "Bad request",
-                        "errors": [{"loc": ["path", "id"], "msg": "invalid ObjectId", "type": "value_error"}]
-                    }
-                }
-            }
-        },
         404: {
-            "description": "Goal not found",
+            "description": "Goal not found for this user in the current year, or no books/genres present",
             "content": {
                 "application/json": {
-                    "example": {"message": "Goal not found"}
+                    "examples": {
+                        "no_goal": {
+                            "summary": "No goal for user in current year",
+                            "value": {"message": "Goal not found for this user for the current year"}
+                        },
+                        "no_genres": {
+                            "summary": "Goal exists but no genre data",
+                            "value": {"message": "No genre data available for this goal"}
+                        }
+                    }
                 }
             }
         },
@@ -728,38 +748,31 @@ async def read_pages_in_goal(id: str):
     },
     name="bookGenresComparison",
 )
-async def book_genres_comparison(id: str):
-    try:
-        oid = ObjectId(id)
-    except Exception:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "message": "Bad request",
-                "errors": [{"loc": ["path", "id"], "msg": "invalid ObjectId", "type": "value_error"}],
-            },
-        )
-
+async def book_genres_comparison(userId: str):
+    year = datetime.now(timezone.utc).year
     coll = app.mongodb[COLLECTION_NAME]
 
     try:
-        goal = await coll.find_one({"_id": oid, "type": "userGoal"})
+        goal = await coll.find_one({"type": "userGoal", "userId": userId, "year": year})
         if not goal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Goal not found"})
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"message": "Goal not found for this user for the current year"},
+            )
 
         books = goal.get("books", [])
         genre_counter = Counter()
 
         for book in books:
-            for g in book.get("genre", []):
+            for g in book.get("genre", []) or []:
                 genre_counter[g] += 1
 
         total = sum(genre_counter.values())
         if total == 0:
-            return {
-                "message": "Genre distribution calculated successfully",
-                "distribution": {}
-            }
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"message": "No genre data available for this goal"},
+            )
 
         distribution = {g: round((count / total) * 100, 2) for g, count in genre_counter.items()}
 
@@ -767,6 +780,7 @@ async def book_genres_comparison(id: str):
             "message": "Genre distribution calculated successfully",
             "distribution": distribution,
         }
+
     except Exception:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -778,6 +792,8 @@ async def book_genres_comparison(id: str):
 @app.delete(
     "/goals/{id}/books",
     description="Remove a book from the books list of a goal, identified by goal ID and bookId.",
+    summary="Remove a book from a reading goal",
+    tags=["Statistics"],
     status_code=status.HTTP_200_OK,
     responses={
         200: {
@@ -876,6 +892,8 @@ async def remove_book_from_goal(id: str, body: GoalRemoveBookIn):
 @app.delete(
     "/goals/{id}",
     description="Delete a goal by its ID.",
+    summary="Delete a goal",
+    tags=["Statistics"],
     status_code=status.HTTP_200_OK,
     responses={
         200: {

@@ -179,7 +179,66 @@ router.post('/:userId/add', controller.addBookToRecommendations);
  *         description: Napaka na strežniku
  */
 router.put('/:userId', controller.updateRecommendations)
+/**
+ * @swagger
+ * /recommendations/{userId}/book/{bookId}:
+ *   put:
+ *     summary: Posodobi posamezno priporočilo knjige za uporabnika
+ *     tags: [Recommendations]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID uporabnika
+ *       - in: path
+ *         name: bookId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID knjige za posodobitev
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newBookId:
+ *                 type: string
+ *             example:
+ *               newBookId: "64f23a7bc4e4a670dc499999"
+ *     responses:
+ *       200:
+ *         description: Posamezno priporočilo posodobljeno
+ *       404:
+ *         description: Uporabnik ali knjiga ni najdena
+ *       500:
+ *         description: Napaka na strežniku
+ */
 router.put('/:userId/book/:bookId', controller.updateSingleRecommendation);
+/**
+ * @swagger
+ * /recommendations/{userId}:
+ *   delete:
+ *     summary: Izbriši vsa priporočila uporabnika
+ *     tags: [Recommendations]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID uporabnika
+ *     responses:
+ *       200:
+ *         description: Vsa priporočila uporabnika so bila izbrisana
+ *       404:
+ *         description: Priporočila za uporabnika niso najdena
+ *       500:
+ *         description: Napaka na strežniku
+ */
 router.delete('/:userId', controller.deleteRecommendationsForUser);
 /**
  * @swagger
