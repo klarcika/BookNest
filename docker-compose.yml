@@ -11,7 +11,8 @@ services:
     environment:
       # - DB_HOST=db-books
       # - DB_PORT=27017
-      - FRONTEND_URL=http://frontend:3000
+      FRONTEND_URL: http://frontend:3000
+      REVIEWS_API_URL: http://backend-reviews:3002
     # depends_on:
     #   - db-books
     networks:
@@ -27,7 +28,8 @@ services:
     environment:
       # - DB_HOST=db-users
       # - DB_PORT=27017
-      - FRONTEND_URL=http://frontend:3000
+      FRONTEND_URL: http://frontend:3000
+      STATISTICS_API_URL: http://backend-statistics:3004
     # depends_on:
     #   - db-users
     networks:
@@ -60,6 +62,7 @@ services:
       # - DB_HOST=db-notifications
       # - DB_PORT=27017
       - FRONTEND_URL=http://frontend:3000
+      - STATISTICS_API_URL=http://backend-statistics:3004
     # depends_on:
     #   - db-notifications
     networks:
@@ -107,6 +110,7 @@ services:
       - ./VivienStampfer/shelves/.env
     environment:
       - FRONTEND_URL=http://frontend:3000
+      - BOOKS_API_URL=http://backend-books:3032
     networks:
       - app-network
 

@@ -29,7 +29,7 @@ const userController = require('../controller/userController');
  *             schema:
  *               $ref: '#/components/schemas/User'
  */
-router.post('/register', userController.addUser);
+router.post('/register', userController.registerUser);
 /**
  * @swagger
  * /users/login:
@@ -74,7 +74,7 @@ router.post('/login', userController.loginUser);
  *               $ref: '#/components/schemas/User'
  */
 router.post('/id', userController.findUser);
-router.get('/me', userController.authenticateToken, userController.getCurrentUser);
+//router.get('/me', userController.authenticateToken, userController.getCurrentUser);
 
 /**
  * @swagger
@@ -92,7 +92,8 @@ router.get('/me', userController.authenticateToken, userController.getCurrentUse
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/allUsers', userController.authenticateToken, userController.allUsers);
+router.get('/allUsers', userController.allUsers);
+//router.get('/allUsers', userController.authenticateToken, userController.allUsers);
 
 /**
  * @swagger
@@ -116,7 +117,8 @@ router.get('/allUsers', userController.authenticateToken, userController.allUser
  *               type: string
  *               example: "john@example.com"
  */
-router.get('/email/:id', userController.authenticateToken, userController.findEmail);
+router.get('/email/:id', userController.findEmail);
+//router.get('/email/:id', userController.authenticateToken, userController.findEmail);
 
 /**
  * @swagger
@@ -150,7 +152,8 @@ router.get('/email/:id', userController.authenticateToken, userController.findEm
  *                   type: string
  *                   example: "Avid book lover and writer."
  */
-router.get('/profile/:id', userController.authenticateToken, userController.findProfile);
+router.get('/profile/:id', userController.findProfile);
+//router.get('/profile/:id', userController.authenticateToken, userController.findProfile);
 
 /**
  * @swagger
@@ -179,7 +182,8 @@ router.get('/profile/:id', userController.authenticateToken, userController.find
  *             schema:
  *               $ref: '#/components/schemas/User'
  */
-router.put('/:id', userController.authenticateToken, userController.changeUser);
+router.put('/:id', userController.changeUser);
+//router.put('/:id', userController.authenticateToken, userController.changeUser);
 
 /**
  * @swagger
@@ -194,24 +198,12 @@ router.put('/:id', userController.authenticateToken, userController.changeUser);
  *         schema:
  *           type: string
  *         description: ID uporabnika
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               genrePreferences:
- *                 type: array
- *                 items:
- *                   type: string
- *               notificationSettings:
- *                 type: object
  *     responses:
  *       200:
  *         description: Preferences uspešno posodobljene
  */
-router.put('/preferences/:id',  userController.authenticateToken,userController.changeUserPreferences);
+router.put('/preferences/:id', userController.changeUserPreferences);
+//router.put('/preferences/:id',  userController.authenticateToken,userController.changeUserPreferences);
 
 /**
  * @swagger
@@ -230,7 +222,8 @@ router.put('/preferences/:id',  userController.authenticateToken,userController.
  *       200:
  *         description: Uporabnik izbrisan
  */
-router.delete('/:id', userController.authenticateToken, userController.deleteUser);
+router.delete('/:id', userController.deleteUser);
+//router.delete('/:id', userController.authenticateToken, userController.deleteUser);
 
 
 /**
@@ -250,8 +243,9 @@ router.delete('/:id', userController.authenticateToken, userController.deleteUse
  *       200:
  *         description: Uporabniki izbrisani
  */
-router.delete('/emailDomain/:domain', userController.authenticateToken, userController.deleteUsersByEmailDomain);
-router.post('/refresh-token',  userController.refreshToken); // Dodan endpoint
+router.delete('/emailDomain/:domain', userController.deleteUsersByEmailDomain);
+//router.delete('/emailDomain/:domain', userController.authenticateToken, userController.deleteUsersByEmailDomain);
+//router.post('/refresh-token',  userController.refreshToken); // Dodan endpoint
 
 
 module.exports = router;

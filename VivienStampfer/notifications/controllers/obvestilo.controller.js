@@ -1,4 +1,5 @@
 import Obvestilo from "../models/obvestilo.model.js";
+const STATISTICS_API_URL = process.env.STATISTICS_API_URL || "http://backend-statistics:3004";
 
 export const seznamObvestil = async (req, res) => {
   try {
@@ -58,10 +59,27 @@ export const dodajObvestilo = async (req, res) => {
       if (!izzivId || !podatki?.nazivIzziva || !podatki?.status) {
         return res.status(400).json({ sporocilo: "Za tip bralniIzziv so obvezni izzivId, nazivIzziva in status" });
       }
+
+      let targetBooks = null;
+      let completedBooks = null;
+
+      try {
+        const r = await fetch(`${STATISTICS_API_URL}/goals/user/${uporabnikId}`);
+        if (r.ok) {
+          const json = await r.json();
+          targetBooks = json?.data?.targetBooks ?? null;
+          completedBooks = json?.data?.completedBooks ?? null;
+        }
+      } catch (e) {
+        console.error("Napaka pri pridobivanju podatkov iz statistics:", e.message);
+      }
+
       vsebina = {
         izzivId,
         nazivIzziva: podatki.nazivIzziva,
         status: podatki.status,
+        targetBooks,
+        completedBooks,
         sporocilo: `Rok za dokončanje izziva "${podatki.nazivIzziva}" se izteče kmalu`
       };
     }

@@ -10,9 +10,10 @@ import {
   dodajKnjigoVRead,
   premakniKnjigoMedPolicami,
   izbrisiKnjigoSPolice,
-  izbrisiShelvesByUser
+  izbrisiShelvesByUser,
+  getReadBooksForUser
 } from "../controllers/shelves.controller.js";
-import { authenticateToken } from '../controllers/shelves.controller.js';
+
 const r = Router();
 
 /**
@@ -41,7 +42,7 @@ const r = Router();
  *       500:
  *         description: Napaka pri pridobivanju polic
  */
-r.get("/",authenticateToken, getShelves);
+r.get("/", getShelves);
 
 /**
  * @swagger
@@ -64,7 +65,7 @@ r.get("/",authenticateToken, getShelves);
  *       500:
  *         description: Napaka pri pridobivanju polic po ID
  */
-r.get("/:id",authenticateToken, getShelvesById);
+r.get("/:id", getShelvesById);
 
 /**
  * @swagger
@@ -126,7 +127,7 @@ r.get("/:id",authenticateToken, getShelvesById);
  *       500:
  *         description: Napaka pri ustvarjanju polic
  */
-r.post("/",authenticateToken, createShelves);
+r.post("/", createShelves);
 
 /**
  * @swagger
@@ -160,7 +161,7 @@ r.post("/",authenticateToken, createShelves);
  *       500:
  *         description: Napaka pri posodabljanju polic
  */
-r.put("/:id",authenticateToken, updateShelves);
+r.put("/:id", updateShelves);
 
 /**
  * @swagger
@@ -183,7 +184,7 @@ r.put("/:id",authenticateToken, updateShelves);
  *       500:
  *         description: Napaka pri brisanju polic
  */
-r.delete("/:id",authenticateToken, deleteShelves);
+r.delete("/:id", deleteShelves);
 
 /**
  * @swagger
@@ -221,7 +222,7 @@ r.delete("/:id",authenticateToken, deleteShelves);
  *       500:
  *         description: Napaka pri dodajanju na wantToRead
  */
-r.put("/:userId/wantToRead",authenticateToken, dodajKnjigoVWantToRead);
+r.put("/:userId/wantToRead", dodajKnjigoVWantToRead);
 
 /**
  * @swagger
@@ -259,7 +260,7 @@ r.put("/:userId/wantToRead",authenticateToken, dodajKnjigoVWantToRead);
  *       500:
  *         description: Napaka pri dodajanju na reading
  */
-r.put("/:userId/reading",authenticateToken ,dodajKnjigoVReading);
+r.put("/:userId/reading" ,dodajKnjigoVReading);
 
 /**
  * @swagger
@@ -297,7 +298,7 @@ r.put("/:userId/reading",authenticateToken ,dodajKnjigoVReading);
  *       500:
  *         description: Napaka pri dodajanju na read
  */
-r.put("/:userId/read",authenticateToken, dodajKnjigoVRead);
+r.put("/:userId/read", dodajKnjigoVRead);
 
 /**
  * @swagger
@@ -362,7 +363,7 @@ r.put("/:userId/read",authenticateToken, dodajKnjigoVRead);
  *       500:
  *         description: Napaka pri premikanju knjige med policami
  */
-r.post("/:userId/move",authenticateToken, premakniKnjigoMedPolicami);
+r.post("/:userId/move", premakniKnjigoMedPolicami);
 
 /**
  * @swagger
@@ -386,7 +387,7 @@ r.post("/:userId/move",authenticateToken, premakniKnjigoMedPolicami);
  *       500:
  *         description: Napaka pri brisanju polic po userId
  */
-r.delete("/by-user/:userId",authenticateToken, izbrisiShelvesByUser);
+r.delete("/by-user/:userId", izbrisiShelvesByUser);
 
 /**
  * @swagger
@@ -425,6 +426,77 @@ r.delete("/by-user/:userId",authenticateToken, izbrisiShelvesByUser);
  *       500:
  *         description: Napaka pri odstranjevanju knjige s police
  */
-r.delete("/:userId/:shelf/:bookId",authenticateToken, izbrisiKnjigoSPolice);
+r.delete("/:userId/:shelf/:bookId",izbrisiKnjigoSPolice);
+
+/**
+ * @swagger
+ * /shelves/{userId}/read/books:
+ *   get:
+ *     tags: [Shelves]
+ *     summary: Vrni vse knjige iz uporabnikove "read" police (obogateno z datumi)
+ *     description: Za dani userId prebere polico *read*. Za vsak `bookId` pokliče book-service in vrne seznam knjig z dodatnim poljem `dateAdded`.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID uporabnika
+ *     responses:
+ *       200:
+ *         description: Seznam najdenih knjig iz police "read"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "123"
+ *                   title:
+ *                     type: string
+ *                     example: "Test Book"
+ *                   author:
+ *                     type: string
+ *                     example: "Jane Doe"
+ *                   genres:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["fantasy","adventure"]
+ *                   publishedYear:
+ *                     type: integer
+ *                     example: 2024
+ *                   isbn:
+ *                     type: string
+ *                     example: "977"
+ *                   description:
+ *                     type: string
+ *                     example: "Kratek opis"
+ *                   coverUrl:
+ *                     type: string
+ *                     format: uri
+ *                     example: "https://example.com/cover.jpg"
+ *                   averageRating:
+ *                     type: number
+ *                     example: 4.2
+ *                   ratingsCount:
+ *                     type: integer
+ *                     example: 12
+ *                   pages:
+ *                     type: integer
+ *                     example: 320
+ *                   dateAdded:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-08-16T08:00:00Z"
+ *       404:
+ *         description: Police niso najdene ali pa na polici read ni knjig oziroma nobene knjige ni bilo mogoče najti v book-service
+ *       500:
+ *         description: napaka
+ */
+r.get("/:userId/read/books", getReadBooksForUser);
 
 export default r;

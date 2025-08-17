@@ -1,7 +1,5 @@
 const { initializeApp } = require("firebase/app");
-const dotenv = require('dotenv');
-
-dotenv.config();
+require('dotenv').config();
 
 const firebaseConfig = {
   apiKey: process.env.EXPRESS_APP_API_KEY,

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { userApi, bookApi, bookshelfApi, reviewApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
+// nekje more bit dodan logout gumb
+
 const ProfilePage = () => {
     const { id } = useParams();
     const [user, setUser] = useState({ profile: { name: 'Unknown', bio: '' }, email: '' });
@@ -21,7 +23,7 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const userRes = await userApi.get('/me');
+                const userRes = await userApi.post('/id', { id });
                 setUser(userRes?.data || { profile: { name: 'Unknown', bio: '' }, email: '' });
 
                 const shelvesRes = await bookshelfApi.get('/?userId=' + userRes?.data?.id);
@@ -38,7 +40,7 @@ const ProfilePage = () => {
                 setError(err?.response?.data?.error || 'Failed to fetch data');
                 if (err?.response?.status === 401) {
                     try {
-                        await userApi.post('/refresh-token');
+                        //await userApi.post('/refresh-token');
                         await fetchData(); // retry
                     } catch {
                         navigate('/login');

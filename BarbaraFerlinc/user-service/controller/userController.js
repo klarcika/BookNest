@@ -1,16 +1,15 @@
-const jwt = require('jsonwebtoken');
+//const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../model/user');
-const db = require('../db');
 
-
-const JWT_SECRET = process.env.JWT_SECRET
+/*const JWT_SECRET = process.env.JWT_SECRET
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET
 const JWT_EXPIRES_IN = '1h';
-const REFRESH_TOKEN_EXPIRES_IN = '7d';
+const REFRESH_TOKEN_EXPIRES_IN = '7d';*/
 // REGISTER
-async function addUser(req, res) {
-    const { email, password, name, profile = {}, preferences = {} } = req.body;
+async function registerUser(req, res) {
+    console.log('Registering user');
+    const { email, password, name } = req.body;
     try {
         const existingUser = await User.getByEmail(email);
         if (existingUser) {
@@ -18,20 +17,9 @@ async function addUser(req, res) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const date = new Date().toJSON();
-        const id = `${email.toLowerCase()}_${date.replace(/[:.]/g, '-')}`;
-        const userData = {
-            email: email.toLowerCase(),
-            passwordHash: hashedPassword,
-            profile: { ...profile, name: name || profile.name || 'Unknown', avatarUrl: profile.avatarUrl || "https://placehold.co/100x100", bio: profile.bio || "" },
-            preferences: { ...preferences, genrePreferences: preferences.genrePreferences || [], notificationSettings: { email: preferences.notificationSettings?.email || true } },
-            role: 'user',
-            refreshToken: null,
-            createdAt: date,
-            updatedAt: date,
-        };
-        await db.collection('Users').doc(id).set(userData);
-        res.status(201).json({ user: { id, email: userData.email, profile: userData.profile, role: userData.role } });
+        const newUser = await User.add(email, hashedPassword, name);
+        console.log(newUser);
+        res.status(200).json({ message: 'User successfully registered', user: newUser });
     } catch (err) {
         res.status(500).json({ error: 'Registration failed', details: err.message });
     }
@@ -45,7 +33,7 @@ async function loginUser(req, res) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign(
+        /*const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role, name: user.profile.name },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
@@ -70,23 +58,16 @@ async function loginUser(req, res) {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 7 * 24 * 3600 * 1000
-        });
+        });*/
 
-        res.status(200).json({
-            user: {
-                id: user.id,
-                email: user.email,
-                profile: user.profile,
-                role: user.role
-            }
-        });
+        res.status(200).json({message: 'Login successful', user: user});
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed', details: err.message });
     }
 }
 // TRENUTNI UPORABNIK
-async function getCurrentUser(req, res) {
+/*async function getCurrentUser(req, res) {
     try {
         const user = req.user;
         res.status(200).json({
@@ -98,7 +79,7 @@ async function getCurrentUser(req, res) {
     } catch (error) {
         res.status(500).json({ error: 'Error retrieving user', details: error.message });
     }
-}
+}*/
 
 // OSTALI ENDPOINTI
 async function findUser(req, res) {
@@ -186,14 +167,13 @@ async function changeUser(req, res) {
 
 async function changeUserPreferences(req, res) {
     const { id } = req.params;
-    const { genrePreferences, notificationSettings } = req.body;
 
     if (!id) {
         return res.status(400).send({ error: 'Id is required.' });
     }
 
     try {
-        const response = await User.updatePreferences(id, genrePreferences, notificationSettings);
+        const response = await User.updatePreferences(id);
         res.status(200).json(response);
     } catch (error) {
         res.status(500).json({ details: error.message });
@@ -224,7 +204,7 @@ async function deleteUsersByEmailDomain(req, res) {
 }
 //--------------------
 // Middleware za preverjanje JWT
-const authenticateToken = async (req, res, next) => {
+/*const authenticateToken = async (req, res, next) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ error: 'No token provided' });
 
@@ -296,13 +276,13 @@ async function refreshToken(req, res) {
     } catch (error) {
         res.status(401).json({ error: 'Invalid refresh token', details: error.message });
     }
-}
+}*/
 
 
 module.exports = {
-    addUser,
+    registerUser,
     loginUser,
-    getCurrentUser,
+    //getCurrentUser,
     findUser,
     allUsers,
     findEmail,
@@ -310,7 +290,7 @@ module.exports = {
     changeUser,
     changeUserPreferences,
     deleteUser,
-    deleteUsersByEmailDomain,
-    authenticateToken,
-    refreshToken
+    deleteUsersByEmailDomain
+    /*authenticateToken,
+    refreshToken*/
 };

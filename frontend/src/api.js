@@ -31,7 +31,7 @@ export const notificationApi = axios.create({
 });
 
 // Interceptor za osvežitev tokena
-[userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi].forEach((api) => {
+/*[userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi].forEach((api) => {
     api.interceptors.response.use(
         (response) => response,
         async (error) => {
@@ -48,5 +48,5 @@ export const notificationApi = axios.create({
             return Promise.reject(error);
         }
     );
-});
+});*/
 
