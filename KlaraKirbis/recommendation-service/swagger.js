@@ -51,7 +51,7 @@ const options = {
             }
         }
     },
-    apis: ["./routes/recommendationRoutes.js"], // kjer boš dodala @swagger anotacije
+    apis: ["./routes/*.js"], // kjer boš dodala @swagger anotacije
 };
 
 const swaggerDocs = swaggerJsdoc(options);
