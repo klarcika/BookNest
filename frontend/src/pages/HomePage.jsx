@@ -22,7 +22,7 @@ const HomePage = () => {
 
                 // Keep only valid books with title
                 const validBooks = booksFromApi.filter(book => book && book.title);
-
+                setBooks(validBooks);
             } catch (err) {
                 setError(err?.response?.data?.error || 'Failed to fetch books');
             }
@@ -64,8 +64,8 @@ const HomePage = () => {
         }
     };
 
-    const handleOpenDetails = (index) => {
-        navigate(`/book/${index}`);
+    const handleOpenDetails = (bookId) => {
+        navigate(`/book/${bookId}`);
     };
 
 
@@ -96,11 +96,11 @@ const HomePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {filteredBooks.map((book, index) => (
                     <BookCard
-                        key={index}
+                        key={book.index}
                         book={book}
-                        added={wantToRead.includes(book._id || index)}
-                        onAddToWantToRead={() => handleAddToWantToRead(book._id || index)}
-                        onOpenDetails={() => handleOpenDetails(index)} // <-- pass index
+                        added={wantToRead.includes(book._id)}
+                        onAddToWantToRead={() => handleAddToWantToRead(book._id)}
+                        onOpenDetails={() => handleOpenDetails(book._id)}
                         userId={userId}
                     />
                 ))}

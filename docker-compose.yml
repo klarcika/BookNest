@@ -108,29 +108,29 @@ services:
     networks:
       - app-network
 
-  frontend:
-    build: "./frontend"
-    container_name: frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - BOOKS_API_URL=http://backend-books:3032
-      - USERS_API_URL=http://backend-users:3030
-      - RECOMMENDATIONS_API_URL=http://backend-recommendations:3003
-      - NOTIFICATIONS_API_URL=http://backend-notifications:3001
-      - REVIEWS_API_URL=http://backend-reviews:3002
-      - STATISTICS_API_URL=http://backend-statistics:3004
-      - SHELVES_API_URL=http://backend-shelves:3005
-    depends_on:
-      - backend-books
-      - backend-users
-      - backend-recommendations
-      - backend-notifications
-      - backend-reviews
-      - backend-statistics
-      - backend-shelves
-    networks:
-      - app-network
+  # frontend:
+  #   build: "./frontend"
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - BOOKS_API_URL=http://backend-books:3032
+  #     - USERS_API_URL=http://backend-users:3030
+  #     - RECOMMENDATIONS_API_URL=http://backend-recommendations:3003
+  #     - NOTIFICATIONS_API_URL=http://backend-notifications:3001
+  #     - REVIEWS_API_URL=http://backend-reviews:3002
+  #     - STATISTICS_API_URL=http://backend-statistics:3004
+  #     - SHELVES_API_URL=http://backend-shelves:3005
+  #   depends_on:
+  #     - backend-books
+  #     - backend-users
+  #     - backend-recommendations
+  #     - backend-notifications
+  #     - backend-reviews
+  #     - backend-statistics
+  #     - backend-shelves
+  #   networks:
+  #     - app-network
 
 networks:
   app-network:

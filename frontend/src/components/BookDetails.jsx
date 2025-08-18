@@ -14,7 +14,6 @@ const BookDetails = () => {
             try {
                 const response = await bookApi.get(`/${id}`);
                 setBook(response.data);
-                setComments(response.data.comments || []);
             } catch (err) {
                 setError(err.response?.data?.error || "Failed to fetch data");
                 if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -22,24 +21,39 @@ const BookDetails = () => {
                 }
             }
         };
+
+        const fetchComments = async () => {
+            try {
+                const response = await reviewApi.get(`/books/${id}/comments`);
+                const items = response.data.data?.items?.slice(0, 20) || [];
+                setComments(items);
+            } catch (err) {
+                setError(err.response?.data?.error || "Failed to fetch comments");
+            }
+        };
+        fetchComments();
+
         fetchBook();
-    }, [id]);
+    }, []);
 
     const handleAddComment = async () => {
         if (!newComment.trim()) return;
 
         try {
-            const response = await reviewApi.post("/", {
-                bookId: id,
-                userName: "Anonymous",
-                text: newComment,
-            });
+            // console.log(`Adding book ${id} to want to read list for user ${localStorage.getItem('userId')}, token: ${localStorage.getItem('jwtToken')}`);
+            const response = await reviewApi.post("/comments", 
+                {
+                    userId: localStorage.getItem('userId'),
+                    bookId: id,
+                    comment: newComment,
+                },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
 
             setComments(prev => [
                 ...prev,
                 {
                     _id: response.data._id || `comment-${prev.length}`,
-                    userName: "Anonymous",
                     text: newComment,
                 },
             ]);
@@ -92,8 +106,8 @@ const BookDetails = () => {
                             key={c._id || idx}
                             className="bg-purple-50 p-3 rounded mb-2"
                         >
-                            <p className="font-semibold">{c.userName || "Anonymous"}</p>
-                            <p>{c.text}</p>
+                            {/* <p className="font-semibold">{c.userName || "Anonymous"}</p> */}
+                            <p>{c.comment}</p>
                         </div>
                     ))
                 ) : (
