@@ -1,10 +1,13 @@
 import os
 import httpx
+import jwt
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
 from pydantic import BaseModel
@@ -16,14 +19,33 @@ load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 DB_NAME = os.getenv("DB_NAME")
 COLL = os.getenv("COLLECTION_NAME")
-# MONGO_URL = os.environ["MONGO_URL"]
-# DB_NAME = os.environ["DB_NAME"]
-# COLL = "reviews"
+JWT_SECRET = os.getenv("JWT_SECRET")
+
 
 BOOKS_API_URL = os.getenv("BOOKS_API_URL")
 SPAM_API_URL = os.getenv("SPAM_API_URL")
 
 app = FastAPI(title="Reviews Service", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
 # ----- Startup/Shutdown -----
 
@@ -65,6 +87,16 @@ async def shutdown():
                 }
             },
             400: {"description": "Bad Request", "content": {"application/json": {"example": {"message": "Invalid input data"}}}},
+            403: {
+                "description": "Forbidden",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "message": "You do not have permission to create this review"
+                        }
+                    }
+                }
+            },
             409: {"description": "Duplicated review", "content": {"application/json": {"example": {"message": "Review already exists for this user and book"}}}},
             422: {
                 "description": "Review not allowed due to spam detection",
@@ -82,7 +114,13 @@ async def shutdown():
         },
         name="newReview",
 )
-async def new_review(payload: NewReviewIn):
+async def new_review(payload: NewReviewIn, request: Request, user=Depends(verify_token)):
+    if payload.userId != user.get("userId"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to create this review",
+        )
+    
     existing = await app.db[COLL].find_one({
         "userId": payload.userId,
         "bookId": payload.bookId
@@ -174,6 +212,14 @@ async def new_review(payload: NewReviewIn):
             }
         },
         400: {"description": "Bad Request", "content": {"application/json": {"example": {"message": "Bad request", "errors": [{"loc": ["body", "userId"], "msg": "field required", "type": "value_error.missing"}]}}}},
+        403: {
+            "description": "Forbidden",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to create this comment"}
+                }
+            }
+        },
         422: {
             "description": "Review not allowed due to spam detection",
             "content": {
@@ -190,11 +236,17 @@ async def new_review(payload: NewReviewIn):
     },
     name="newComment",
 )
-async def new_comment(payload: NewCommentIn):
+async def new_comment(payload: NewCommentIn, user=Depends(verify_token)):
     doc = payload.model_dump()
     doc["createdAt"] = datetime.now(timezone.utc)
     doc["type"] = "comment"
     
+    if payload.userId != user.get("userId"):
+        return JSONResponse(
+            status_code=403,
+            content={"message": "You do not have permission to create this comment"}
+        )
+
     async with httpx.AsyncClient() as client:
         try:
             spam_resp = await client.post(f"{SPAM_API_URL}/api/spam-check-review", json={"text": payload.comment})
@@ -346,7 +398,7 @@ async def new_comment(payload: NewCommentIn):
         }
     },
 )
-async def add_review_to_star_rating(id: str, body: ReviewTextIn):
+async def add_review_to_star_rating(id: str, body: ReviewTextIn, user=Depends(verify_token)):
     try:
         _id = oid(id)
     except Exception:
@@ -394,7 +446,7 @@ async def add_review_to_star_rating(id: str, body: ReviewTextIn):
     if not review_doc:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Review not found"})
 
-    if review_doc.get("userId") != body.userId:
+    if review_doc.get("userId") != user["user_id"]:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content={"message": "Forbidden: review belongs to a different user"},
@@ -519,7 +571,7 @@ async def add_review_to_star_rating(id: str, body: ReviewTextIn):
         }
     },
 )
-async def change_star_rating(id: str, body: RatingIn):
+async def change_star_rating(id: str, body: RatingIn, user=Depends(verify_token)):
     try:
         _id = oid(id)
     except Exception:
@@ -542,7 +594,7 @@ async def change_star_rating(id: str, body: RatingIn):
     if not doc:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Review not found"})
 
-    if doc.get("userId") != body.userId:
+    if doc.get("userId") != user["user_id"]:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content={"message": "Forbidden: review belongs to a different user"},
@@ -800,24 +852,24 @@ async def review_by_user_and_book(retrieve: RetrieveReviewIn):
     name="allReviewsByBookId",
 )
 async def all_reviews_by_book_id(bookId: str):              #, limit: int = 20, skip: int = 0
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(f"{BOOKS_API_URL}/books/{bookId}")
-            if resp.status_code == 404:
-                return JSONResponse(
-                    status_code=404,
-                    content={"message": f"Book with id='{bookId}' not found"},
-                )
-            elif resp.status_code != 200:
-                return JSONResponse(
-                    status_code=500,
-                    content={"message": "Error checking book existence in book-service"},
-                )
-        except Exception:
-            return JSONResponse(
-                status_code=500,
-                content={"message": "Error connecting to book-service"},
-            )
+    # async with httpx.AsyncClient() as client:
+    #     try:
+    #         resp = await client.get(f"{BOOKS_API_URL}/books/{bookId}")
+    #         if resp.status_code == 404:
+    #             return JSONResponse(
+    #                 status_code=404,
+    #                 content={"message": f"Book with id='{bookId}' not found"},
+    #             )
+    #         elif resp.status_code != 200:
+    #             return JSONResponse(
+    #                 status_code=500,
+    #                 content={"message": "Error checking book existence in book-service"},
+    #             )
+    #     except Exception:
+    #         return JSONResponse(
+    #             status_code=500,
+    #             content={"message": "Error connecting to book-service"},
+    #         )
     
     try:
         cursor = (
@@ -1104,7 +1156,7 @@ async def average_score_for_review(bookId: str):
         }
     },
 )
-async def remove_comment_by_id(body: CommentDeleteIn):
+async def remove_comment_by_id(body: CommentDeleteIn, user=Depends(verify_token)):
     try:
         _id = oid(body.id)
     except Exception:
@@ -1127,7 +1179,7 @@ async def remove_comment_by_id(body: CommentDeleteIn):
     if not doc:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Comment not found"})
 
-    if doc.get("userId") != body.userId:
+    if doc.get("userId") != user["user_id"]:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content={"message": "Forbidden: comment belongs to a different user"},
@@ -1181,6 +1233,16 @@ async def remove_comment_by_id(body: CommentDeleteIn):
                 }
             }
         },
+        403: {
+            "description": "Forbidden",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "You do not have permission to delete this review"
+                    }
+                }
+            }
+        },
         404: {
             "description": "Review not found",
             "content": {
@@ -1204,8 +1266,16 @@ async def remove_comment_by_id(body: CommentDeleteIn):
     },
     name="removeReviewById",
 )
-async def remove_review_by_id(id: str):
+async def remove_review_by_id(id: str, user=Depends(verify_token)):
     try:
+        doc = await app.db[COLL].find_one({"_id": oid(id)})
+
+        if doc.get("userId") != user["user_id"]:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"message": "You do not have permission to delete this review"},
+            )
+
         res = await app.db[COLL].delete_one({"_id": oid(id), "type": "review"})
     except Exception:
         return JSONResponse(
