@@ -215,6 +215,7 @@ export const izbrisiShelvesByUser = async (req, res) => {
 export const getReadBooksForUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const includeBadge = req.query.includeBadge === '1';
     const doc = await Shelves.findOne({ userId }).lean();
     if (!doc) return res.status(404).json({ message: "Police niso najdene" });
 
@@ -242,7 +243,28 @@ export const getReadBooksForUser = async (req, res) => {
       return res.status(404).json({ message: "Knjige v read niso najdene iz book-service" });
     }
 
-    res.json(found);
+    if (!includeBadge) {
+      return res.json(found);
+    }
+
+    let badgePayload = null;
+    try {
+      if (BADGES_API_URL) {
+        const br = await fetch(`${BADGES_API_URL}/badges/${userId}`);
+        if (br.ok) badgePayload = await br.json();
+      }
+    } catch (e) {
+      console.error("Badges ne deluje:", e.message);
+    }
+
+    const readCount = badgePayload?.readCount ?? readItems.length;
+    const badge = badgePayload?.badge ?? null;
+
+    return res.json({
+      books: found,
+      readCount,
+      badge,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
