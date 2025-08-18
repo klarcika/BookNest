@@ -270,3 +270,18 @@ export const getReadBooksForUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+export const getShelvesByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;          
+    if (!userId) {
+      return res.status(400).json({ message: "Manjka userId" });
+    }
+
+    const shelf = await Shelves.findOne({ userId }).lean(); 
+    if (!shelf) return res.status(404).json({ message: "Police niso najdene" });
+
+    res.status(200).json(shelf);
+  } catch (err) {
+    res.status(500).json({ message: "Napaka pri pridobivanju polic po userId", error: err.message });
+  }
+};

@@ -12,7 +12,8 @@ import {
   premakniKnjigoMedPolicami,
   izbrisiKnjigoSPolice,
   izbrisiShelvesByUser,
-  getReadBooksForUser
+  getReadBooksForUser,
+  getShelvesByUserId
 } from "../controllers/shelves.controller.js";
 
 const r = Router();
@@ -511,5 +512,5 @@ r.delete("/:userId/:shelf/:bookId", authenticateToken, izbrisiKnjigoSPolice);
  */
 r.get("/:userId/read/books", getReadBooksForUser);
 // r.get("/:userId/read/books", authenticateToken, getReadBooksForUser);
-
+r.get('/user/:userId', authenticateToken, getShelvesByUserId);
 export default r;
