@@ -33,3 +33,6 @@ export const notificationApi = axios.create({
     withCredentials: true,
 });
 
+export const graphqlApiLena = axios.create({
+    baseURL: 'http://localhost:3010/graphql',
+});

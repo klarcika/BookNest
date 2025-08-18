@@ -205,7 +205,7 @@ const ProfilePage = () => {
                 <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
                 <p><strong>Bio:</strong> {user?.profile?.bio || ''}</p>
 
-                <div className="mt-6 flex items-center gap-6">
+                {/* <div className="mt-6 flex items-center gap-6">
                     {readingChallenge?.goal ? (
                         <div className="flex items-center gap-4">
                             <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
@@ -244,7 +244,7 @@ const ProfilePage = () => {
                             Save
                         </button>
                     </div>
-                )}
+                )} */}
 
                 <GoalContainer />
             </div>
