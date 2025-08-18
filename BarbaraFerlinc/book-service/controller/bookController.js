@@ -113,7 +113,14 @@ async function findBook(req, res) {
     if (!book) {
       return res.status(404).json({ error: "Book does not exist" });
     }
-    res.status(200).json(book);
+
+    const contentInfo = await fetch(process.env.CONTENT_NOTICES_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ title: book.title, description: book.description })
+    });
+
+    res.status(200).json({ book: book, contentInfo: contentInfo });
   } catch (error) {
     res.status(500).json({ details: error.message });
   }

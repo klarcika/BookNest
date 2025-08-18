@@ -53,14 +53,6 @@ const ProfilePage = () => {
                     localStorage.removeItem('jwtToken');
                     navigate('/login');
                 }
-                /*if (err?.response?.status === 401) {
-                    try {
-                        //await userApi.post('/refresh-token');
-                        await fetchData(); // retry
-                    } catch {
-                        navigate('/login');
-                    }
-                }*/
             }
         };
         fetchData();

@@ -13,8 +13,8 @@ const BookDetails = () => {
         const fetchBook = async () => {
             try {
                 const response = await bookApi.get(`/${id}`);
-                setBook(response.data);
-                setComments(response.data.comments || []);
+                setBook(response.data.book);
+                setComments(response.data.book.comments || []);
             } catch (err) {
                 setError(err.response?.data?.error || "Failed to fetch data");
                 if (err?.response?.status === 401 || err?.response?.status === 403) {
