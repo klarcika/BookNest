@@ -21,6 +21,7 @@ COLL = os.getenv("COLLECTION_NAME")
 # COLL = "reviews"
 
 BOOKS_API_URL = os.getenv("BOOKS_API_URL")
+SPAM_API_URL = os.getenv("SPAM_API_URL")
 
 app = FastAPI(title="Reviews Service", version="1.0")
 
@@ -65,6 +66,18 @@ async def shutdown():
             },
             400: {"description": "Bad Request", "content": {"application/json": {"example": {"message": "Invalid input data"}}}},
             409: {"description": "Duplicated review", "content": {"application/json": {"example": {"message": "Review already exists for this user and book"}}}},
+            422: {
+                "description": "Review not allowed due to spam detection",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "message": "Review not allowed due to spam detection",
+                            "type": "profanity",
+                            "word": "badword"
+                        }
+                    }
+                }
+            },
             500: {"description": "Internal Server Error", "content": {"application/json": {"example": {"message": "Internal server error while creating review"}}}},
         },
         name="newReview",
@@ -77,8 +90,31 @@ async def new_review(payload: NewReviewIn):
     if existing:
         return JSONResponse(status_code=409, content={"message": "Review already exists for this user and book"})
 
-    
     async with httpx.AsyncClient() as client:
+        try:
+            spam_resp = await client.post(f"{SPAM_API_URL}/api/spam-check-review", json={"text": payload.review})
+            if spam_resp.status_code == 200:
+                spam_data = spam_resp.json()
+                if not spam_data.get("allowed", True):
+                    return JSONResponse(
+                        status_code=422,
+                        content={
+                            "message": "Review not allowed due to spam detection",
+                            "type": spam_data.get("type"),
+                            "word": spam_data.get("word")
+                        },
+                    )
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={"message": "Error checking review for spam"},
+                )
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Error connecting to spam-check service"},
+            )
+
         try:
             resp = await client.get(f"{BOOKS_API_URL}/books/{payload.bookId}")
             if resp.status_code == 404:
@@ -138,6 +174,18 @@ async def new_review(payload: NewReviewIn):
             }
         },
         400: {"description": "Bad Request", "content": {"application/json": {"example": {"message": "Bad request", "errors": [{"loc": ["body", "userId"], "msg": "field required", "type": "value_error.missing"}]}}}},
+        422: {
+            "description": "Review not allowed due to spam detection",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Review not allowed due to spam detection",
+                        "type": "profanity",
+                        "word": "badword"
+                    }
+                }
+            }
+        },
         500: {"description": "Internal Server Error", "content": {"application/json": {"example": {"message": "Internal server error while creating comment"}}}},
     },
     name="newComment",
@@ -146,6 +194,31 @@ async def new_comment(payload: NewCommentIn):
     doc = payload.model_dump()
     doc["createdAt"] = datetime.now(timezone.utc)
     doc["type"] = "comment"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            spam_resp = await client.post(f"{SPAM_API_URL}/api/spam-check-review", json={"text": payload.comment})
+            if spam_resp.status_code == 200:
+                spam_data = spam_resp.json()
+                if not spam_data.get("allowed", True):
+                    return JSONResponse(
+                        status_code=422,
+                        content={
+                            "message": "Review not allowed due to spam detection",
+                            "type": spam_data.get("type"),
+                            "word": spam_data.get("word")
+                        },
+                    )
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={"message": "Error checking review for spam"},
+                )
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Error connecting to spam-check service"},
+            )
 
     try:
         res = await app.db[COLL].insert_one(doc)
@@ -229,6 +302,18 @@ async def new_comment(payload: NewCommentIn):
                 }
             }
         },
+        422: {
+            "description": "Review not allowed due to spam detection",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Review not allowed due to spam detection",
+                        "type": "profanity",
+                        "word": "badword"
+                    }
+                }
+            }
+        },
         500: {
             "description": "Internal server error while updating review",
             "content": {
@@ -272,6 +357,31 @@ async def add_review_to_star_rating(id: str, body: ReviewTextIn):
                 "errors": [{"loc": ["path", "id"], "msg": "invalid ObjectId", "type": "value_error"}],
             },
         )
+        
+    async with httpx.AsyncClient() as client:
+        try:
+            spam_resp = await client.post(f"{SPAM_API_URL}/api/spam-check-review", json={"text": body.review})
+            if spam_resp.status_code == 200:
+                spam_data = spam_resp.json()
+                if not spam_data.get("allowed", True):
+                    return JSONResponse(
+                        status_code=422,
+                        content={
+                            "message": "Review not allowed due to spam detection",
+                            "type": spam_data.get("type"),
+                            "word": spam_data.get("word")
+                        },
+                    )
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={"message": "Error checking review for spam"},
+                )
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Error connecting to spam-check service"},
+            )
 
     try:
         review_doc = await app.db[COLL].find_one({"_id": _id, "type": "review"})
@@ -551,7 +661,7 @@ async def review_by_user_and_book(retrieve: RetrieveReviewIn):
     if not doc:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"message": f"Review not found for userId='{userId}' and bookId='{bookId}'"},
+            content={"message": f"Review not found for userId='{retrieve.userId}' and bookId='{retrieve.bookId}'"},
         )
 
     return {

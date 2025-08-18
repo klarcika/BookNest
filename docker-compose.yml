@@ -76,9 +76,6 @@ services:
     env_file:
       - ./LenaBojc/review-service/.env
     environment:
-      # MONGO_URL: "mongodb://db-reviews:27017"
-      # DB_NAME: "booknest_reviews"
-      # COLLECTION_NAME: ${COLLECTION_NAME}
       FRONTEND_URL: "http://frontend:3000"
       # USERS_API_URL: "http://backend-users:3030"
       BOOKS_API_URL: "http://backend-books:3032"
@@ -93,9 +90,6 @@ services:
     env_file:
       - ./LenaBojc/statistics-service/.env
     environment:
-      # MONGO_URL: ${MONGO_URL}
-      # DB_NAME: ${DB_NAME}
-      # COLLECTION_NAME: ${COLLECTION_NAME}
       FRONTEND_URL: http://frontend:3000
       SHELVES_API_URL: http://backend-shelves:3005
     networks:

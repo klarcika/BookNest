@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
 
 # ----- IN -----
@@ -47,6 +47,13 @@ class ReadBookOut(BaseModel):
     fromGoalId: Optional[str] = Field(None, example="66cfc0a7f2d0e9d7f9c1a234")
     createdAt: datetime
 
+class GoalHintsOut(BaseModel):
+    status: Literal["ahead", "on_track", "behind"]
+    pacePerWeek: float
+    daysLeft: int
+    behindBy: int
+    note: str
+
 # ----- CREATED -----
 class GoalCreated(BaseModel):
     message: str
@@ -55,3 +62,8 @@ class GoalCreated(BaseModel):
 class ReadBookCreated(BaseModel):
     message: str
     data: ReadBookOut
+
+class GoalCreatedWithCoach(BaseModel):
+    message: str
+    data: GoalOut
+    coach: Optional[GoalHintsOut] = None

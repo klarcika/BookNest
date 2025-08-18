@@ -1,42 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { notificationApi } from '../api';
-import {jwtDecode} from 'jwt-decode';
 
 const NotificationsPage = () => {
-    const [userNotifications, setUserNotifications] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [userId, setUserId] = useState('');
 
-    /*useEffect(() => {
-        const token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('token='))
-            ?.split('=')[1];
-        if (token) {
-            try {
-                const decodedToken = jwtDecode(token);
-                setUserId(decodedToken.id); // Uporabi ID iz tokena
-            } catch (err) {
-                setError('Invalid token');
-                setLoading(false);
-            }
-        } else {
-            setError('No token found');
-            setLoading(false);
-        }
-    }, []);*/
-
-    const fetchNotifications = async (userId) => {
-        if (!userId) {
-            setError('No user ID available');
-            setLoading(false);
-            return;
-        }
+    const fetchNotifications = async () => {
         try {
-            const response = await notificationApi.get('', { params: { uporabnikId: userId } });
-            console.log('Notifications response:', response.data);
-            setUserNotifications(response.data || []);
+            const response = await notificationApi.get('/');
+            console.log('✅ Notifications response:', response.data);
+            setNotifications(response.data || []);
         } catch (err) {
             console.error("❌ Napaka pri pridobivanju obvestil:", err.response?.data || err.message);
             setError('Failed to load notifications. Check console for details.');
@@ -46,20 +20,20 @@ const NotificationsPage = () => {
     };
 
     useEffect(() => {
-        if (userId) fetchNotifications(userId);
-    }, [userId]);
+        fetchNotifications();
+    }, []);
 
     if (loading) return <p className="text-center text-gray-600">⏳ Nalaganje obvestil...</p>;
     if (error) return <p className="text-center text-red-500">{error}</p>;
 
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-6 text-purple-900">🔔 Notifications</h1>
-            {userNotifications.length === 0 ? (
+            <h1 className="text-3xl font-bold mb-6 text-purple-900">🔔 Vsa obvestila</h1>
+            {notifications.length === 0 ? (
                 <p className="text-gray-600">Ni obvestil za prikaz.</p>
             ) : (
                 <ul className="space-y-4">
-                    {userNotifications.map((n) => (
+                    {notifications.map((n) => (
                         <li key={n._id} className="bg-white shadow rounded p-4">
                             <p className="text-lg text-gray-800">
                                 {n.vsebina?.sporocilo || 'No message available'}
