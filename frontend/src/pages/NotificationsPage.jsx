@@ -1,22 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { notificationApi } from "../api";
 
 const NotificationsPage = () => {
-    const { id } = useParams(); // uporabnikId iz URL
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const fetchNotifications = async () => {
+        const token = localStorage.getItem("jwtToken");
+
+        if (!token) {
+            setError("Uporabnik ni prijavljen");
+            setLoading(false);
+            return;
+        }
+
         try {
-            const res = await notificationApi.get(
-                `/`,
-                { headers: { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` } }
-            );
-            setNotifications(res.data || []);
+            // Pošljemo token, backend bo filtriral obvestila po prijavljenem uporabniku
+            const res = await notificationApi.get("/", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            // Preverimo, če je res.data array
+            if (Array.isArray(res.data)) {
+                setNotifications(res.data);
+            } else {
+                setNotifications([]);
+                setError("Nepričakovani format podatkov z backend-a");
+            }
         } catch (err) {
-            setError(err?.response?.data?.sporocilo || "Napaka pri pridobivanju obvestil");
+            console.error("Napaka pri pridobivanju obvestil:", err);
+
+            // Poskušamo vzeti napako iz backend response, sicer default sporočilo
+            const backendError = err?.response?.data?.sporocilo || "Napaka pri pridobivanju obvestil";
+            setError(backendError);
         } finally {
             setLoading(false);
         }
@@ -24,16 +44,17 @@ const NotificationsPage = () => {
 
     useEffect(() => {
         fetchNotifications();
-    }, [id]);
+    }, []);
 
     if (loading) return <p className="text-center">⏳ Nalaganje...</p>;
     if (error) return <p className="text-center text-red-500">{error}</p>;
 
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-6 text-purple-900">🔔 Obvestila</h1>
+            <h1 className="text-3xl font-bold mb-6 text-purple-900">🔔 Moja obvestila</h1>
+
             {notifications.length === 0 ? (
-                <p className="text-gray-600">Ni obvestil za tega uporabnika.</p>
+                <p className="text-gray-600">Trenutno ni obvestil.</p>
             ) : (
                 <ul className="space-y-4">
                     {notifications.map((n) => (
