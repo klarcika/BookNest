@@ -509,7 +509,7 @@ r.delete("/:userId/:shelf/:bookId", authenticateToken, izbrisiKnjigoSPolice);
  *       500:
  *         description: napaka
  */
-//r.get("/:userId/read/books", getReadBooksForUser);
-r.get("/:userId/read/books", authenticateToken, getReadBooksForUser);
+r.get("/:userId/read/books", getReadBooksForUser);
+// r.get("/:userId/read/books", authenticateToken, getReadBooksForUser);
 
 export default r;
