@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 # from pymongo.mongo_client import MongoClient
 # from pymongo.server_api import ServerApi
-from .models import GoalIn, GoalOut, GoalCreated, BookRef, GoalRemoveBookIn, GoalTargetIn, GoalAddBookIn, ReadBookCreated, ReadBookIn, ReadBookOut
+from .models import GoalIn, GoalOut, GoalCreated, BookRef, GoalRemoveBookIn, GoalTargetIn, GoalAddBookIn, ReadBookCreated, ReadBookIn, ReadBookOut, GoalCreatedWithCoach
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
