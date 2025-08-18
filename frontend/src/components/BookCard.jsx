@@ -1,33 +1,26 @@
-const BookCard = ({ book, added, onAddToWantToRead, onOpenDetails, userId }) => {
+const BookCard = ({ book, added, onAddToWantToRead, onOpenDetails }) => {
     return (
-        <div
-            onClick={onOpenDetails} // <-- navigate when the card is clicked
-            className="bg-white rounded-lg shadow hover:shadow-xl transition p-4 text-left flex flex-col cursor-pointer"
-        >
+        <div className="p-4 bg-white shadow rounded-lg cursor-pointer" onClick={onOpenDetails}>
             <img
-                src={book.coverUrl}
-                alt={book.title}
-                className="w-full object-cover rounded mb-4 aspect-[3/4]"
+                src={book.coverUrl || "https://via.placeholder.com/150x220?text=No+Cover"}
+                alt={book.title || "Untitled"}
+                className="w-full h-56 object-cover rounded-md mb-3"
             />
+            <h2 className="font-bold text-lg">{book.title || "Untitled"}</h2>
+            <p className="text-sm text-gray-600">{book.author || "Unknown Author"}</p>
+            <p className="text-xs text-gray-500">{book.publishedYear || "N/A"}</p>
 
-            <h2 className="text-xl font-semibold text-gray-800">{book.title}</h2>
-            <p className="text-sm text-gray-600 mb-2">
-                by {book.author} ({book.publishedYear})
-            </p>
-
-            { userId && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation(); // prevent card click
-                        onAddToWantToRead();
-                    }}
-                    disabled={added}
-                    className={`self-end px-3 py-1 rounded text-white font-medium 
-                        ${added ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
-                >
-                    {added ? 'Added ✓' : '+ Want to read '}
-                </button>
-            )}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToWantToRead();
+                }}
+                className={`mt-2 px-3 py-1 rounded ${
+                    added ? "bg-green-500 text-white" : "bg-purple-600 text-white"
+                }`}
+            >
+                {added ? "Added" : "Want to Read"}
+            </button>
         </div>
     );
 };

@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import BookDetails from "./components/BookDetails";
 import AdminPage from "./pages/AdminPage";
+import BookCard from "./components/BookCard";
 
 const App = () => {
     return (

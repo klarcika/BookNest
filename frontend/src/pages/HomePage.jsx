@@ -15,15 +15,35 @@ const HomePage = () => {
         const fetchBooks = async () => {
             try {
                 const res = await bookApi.get('/allBooks');
+                console.log("API response:", res.data); // 🔎 izpiše vse iz API
+
                 const booksFromApi = res.data.books || [];
 
                 const uid = localStorage.getItem('userId');
                 setUserId(uid);
 
-                // Keep only valid books with title
-                const validBooks = booksFromApi.filter(book => book && book.title);
+                // Zaenkrat ne filtriraj po title
+                // Če rabiš default vrednosti, lahko jih sam dodaš
+                const booksWithDefaults = booksFromApi.map(book => ({
+                    title: book.title || "Untitled",
+                    author: book.author || "Unknown Author",
+                    genres: book.genres || [],
+                    publishedYear: book.publishedYear || "N/A",
+                    isbn: book.isbn || "",
+                    description: book.description || "",
+                    coverUrl: book.coverUrl || "",
+                    averageRating: book.averageRating || 0,
+                    ratingsCount: book.ratingsCount || 0,
+                    pages: book.pages || 0,
+                    _id: book._id || Math.random().toString(36).substr(2, 9) // fallback key
+                }));
+
+                console.log("Books after mapping:", booksWithDefaults);
+
+                setBooks(booksWithDefaults);
 
             } catch (err) {
+                console.error("Fetch error:", err);
                 setError(err?.response?.data?.error || 'Failed to fetch books');
             }
         };
@@ -64,9 +84,10 @@ const HomePage = () => {
         }
     };
 
-    const handleOpenDetails = (index) => {
-        navigate(`/book/${index}`);
+    const handleOpenDetails = (bookId) => {
+        navigate(`/book/${bookId}`);
     };
+
 
 
     return (
@@ -94,18 +115,22 @@ const HomePage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {filteredBooks.map((book, index) => (
-                    <BookCard
-                        key={index}
-                        book={book}
-                        added={wantToRead.includes(book._id || index)}
-                        onAddToWantToRead={() => handleAddToWantToRead(book._id || index)}
-                        onOpenDetails={() => handleOpenDetails(index)} // <-- pass index
-                        userId={userId}
-                    />
-                ))}
+                {filteredBooks.map((book, index) => {
+                    console.log("Rendering book:", book); // 🔎
+                    return (
+                        <BookCard
+                            key={book._id}
+                            book={book}
+                            added={wantToRead.includes(book._id)}
+                            onAddToWantToRead={() => handleAddToWantToRead(book._id)}
+                            onOpenDetails={() => handleOpenDetails(book._id)} // <-- zdaj pošlješ pravi ID
+                            userId={userId}
+                        />
 
+                    )
+                })}
             </div>
+
         </div>
     );
 };

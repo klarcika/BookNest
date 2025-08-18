@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userApi, bookApi, bookshelfApi, reviewApi, statisticApi } from '../api';
+import { userApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
