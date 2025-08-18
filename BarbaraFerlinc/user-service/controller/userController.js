@@ -28,6 +28,13 @@ function authenticateToken(req, res, next) {
     });
 }
 
+function authorizeAdmin(req, res, next) {
+    if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied: Admins only' });
+    }
+    next();
+}
+
 async function registerUser(req, res) {
     console.log('Registering user');
     const { email, password, name } = req.body;
@@ -189,6 +196,7 @@ async function deleteUsersByEmailDomain(req, res) {
 
 module.exports = {
     authenticateToken,
+    authorizeAdmin,
     registerUser,
     loginUser,
     findUser,

@@ -65,7 +65,7 @@ const bookController = require('../controller/bookController');
  *         description: Book successfully added
  */
 //router.post('/addBook', bookController.addBook);
-router.post('/addBook', bookController.authenticateToken, bookController.addBook);
+router.post('/addBook', bookController.authenticateToken, userController.authorizeAdmin, bookController.addBook);
 
 /**
  * @swagger
@@ -235,7 +235,7 @@ router.put('/rating/:id', bookController.authenticateToken, bookController.chang
  *         description: Book successfully deleted
  */
 //router.delete('/:id', bookController.deleteBook);
-router.delete('/:id', bookController.authenticateToken, bookController.deleteBook);
+router.delete('/:id', bookController.authenticateToken, userController.authorizeAdmin, bookController.deleteBook);
 
 /**
  * @swagger
@@ -262,6 +262,6 @@ router.delete('/:id', bookController.authenticateToken, bookController.deleteBoo
  *                   type: string
  */
 //router.delete('/author/:author', bookController.deleteBooksByAuthor);
-router.delete('/author/:author', bookController.authenticateToken, bookController.deleteBooksByAuthor);
+router.delete('/author/:author', bookController.authenticateToken, userController.authorizeAdmin, bookController.deleteBooksByAuthor);
 
 module.exports = router;

@@ -15,6 +15,13 @@ function authenticateToken(req, res, next) {
     });
 }
 
+function authorizeAdmin(req, res, next) {
+    if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied: Admins only' });
+    }
+    next();
+}
+
 async function addBook(req, res) {
   const {
     title,
