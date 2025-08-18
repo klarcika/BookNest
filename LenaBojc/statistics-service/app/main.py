@@ -12,13 +12,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 # from pymongo.mongo_client import MongoClient
 # from pymongo.server_api import ServerApi
-from .models import GoalIn, GoalOut, GoalCreated, BookRef, GoalRemoveBookIn, GoalTargetIn, GoalAddBookIn, ReadBookCreated, ReadBookIn, ReadBookOut
+from .models import GoalIn, GoalOut, GoalCreated, BookRef, GoalRemoveBookIn, GoalTargetIn, GoalAddBookIn, ReadBookCreated, ReadBookIn, ReadBookOut, GoalCreatedWithCoach
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 DB_NAME = os.getenv("DB_NAME")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+
 SHELVES_API_URL = os.getenv("SHELVES_API_URL")
+FEATURE_FLAGS_URL = os.getenv("FEATURE_FLAGS_URL")
 
 app = FastAPI(title="Statistics Service", version="1.0")
 app.add_middleware(
@@ -28,6 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # ----- Startup/Shutdown -----
 
 @app.on_event("startup")
@@ -39,12 +42,57 @@ async def startup_db_client():
 async def shutdown_db_client():
     app.mongodb_client.close()
 
+# ----- Helpers -----
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "message": "Bad request",
+            "errors": exc.errors()  
+        },
+    )
+
+def _to_out(d: dict) -> GoalOut:
+    return GoalOut(
+        id=str(d.get("_id")),                       
+        userId=d["userId"],                        
+        year=d["year"],                              
+        targetBooks=d["targetBooks"],                
+        books=[BookRef(**b) for b in d.get("books", [])],
+        completedBooks=d.get("completedBooks", 0),   
+        createdAt=d["createdAt"],                    
+    )
+
+def _rb_to_out(d: dict) -> ReadBookOut:
+    return ReadBookOut(
+        id=str(d.get("_id")),
+        userId=d["userId"],
+        book=BookRef(**d["book"]),
+        fromGoalId=str(d["fromGoalId"]) if d.get("fromGoalId") else None,
+        createdAt=d["createdAt"],
+    )
+
+# async def fetch_goal_hints(target: int, completed: int, year: int):
+#     if not FEATURE_FLAGS_URL:
+#         return None
+#     try:
+#         async with httpx.AsyncClient(timeout=3.0) as c:
+#             r = await c.post(
+#                 f"{FEATURE_FLAGS_URL}/v1/goal-hints",
+#                 json={"targetBooks": target, "completedBooks": completed, "year": year},
+#             )
+#         return r.json() if r.status_code == 200 else None
+#     except Exception:
+#         return None
+
 # ----- POST -----
 
 @app.post(
     "/goals",
     description=(
-        "Create a reading goal for the current calendar year. "
+        "Create a reading goal for the current calendar year and add any already read books from this year. "
         "If a goal for this user already exists for the current year, returns 409 (Conflict)."
     ),
     summary="Create a new reading goal",
@@ -144,8 +192,23 @@ async def create_user_goal(body: GoalIn):
         created = await coll.find_one({"_id": ins.inserted_id}) 
         out = _to_out(created)
         
-        # SHELVES_API_URL: check if any books on READ shelf and add them to books
-        # SHELVES_API_URL/shelves/{userId}/read, vrne List[BookRef]
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{SHELVES_API_URL}/shelves/{body.userId}/read/books")
+            if resp.status_code == 200:
+                books = resp.json()
+                filtered_books = [
+                    book for book in books
+                    if datetime.fromisoformat(book["dateAdded"].replace("Z", "+00:00")).year == year
+                ]
+                await coll.update_one(
+                    {"_id": ins.inserted_id},
+                    {
+                        "$set": {
+                            "books": filtered_books,
+                            "completedBooks": len(filtered_books)
+                        }
+                    }
+                )
 
         return {
             "message": "Goal created successfully",            
@@ -562,7 +625,7 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
     description="Get the current reading goal for a user, identified by their userId.",
     summary="Get user's reading goal",
     tags=["Statistics"],
-    response_model=GoalCreated,
+    response_model=GoalCreatedWithCoach,
     status_code=status.HTTP_200_OK,
     responses={
         200: {
@@ -579,6 +642,13 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
                             "books": [],
                             "completedBooks": 0,
                             "createdAt": "2025-07-16T08:00:00Z"
+                        },
+                        "coach": {
+                            "status": "behind",
+                            "pacePerWeek": 1.5,
+                            "daysLeft": 138,
+                            "behindBy": 2,
+                            "note": "Behind by ~2 book(s). ~1.5/week hits the target."
                         }
                     }
                 }
@@ -605,17 +675,44 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
 )
 async def get_goal_by_userid(userId: str):
     coll = app.mongodb[COLLECTION_NAME]
+    year = datetime.now(timezone.utc).year
 
     try:
-        goal = await coll.find_one({"type": "userGoal", "userId": userId})
+        goal = await coll.find_one({"type": "userGoal", "userId": userId, "year": year})
         if not goal:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={"message": "Goal not found for this user"},
             )
+
+        coach = None
+        try:
+            if FEATURE_FLAGS_URL:
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    resp = await client.post(
+                        f"{FEATURE_FLAGS_URL}/goal-hints",
+                        json={
+                            "targetBooks": int(goal.get("targetBooks", 0)),
+                            "completedBooks": int(goal.get("completedBooks", 0)),
+                            "year": int(goal.get("year", 0)),
+                        },
+                    )
+                if resp.status_code == 200:
+                    data = resp.json() or {}
+                    coach = {
+                        "status": data.get("status"),
+                        "pacePerWeek": data.get("pacePerWeek"),
+                        "daysLeft": data.get("daysLeft"),
+                        "behindBy": data.get("behindBy"),
+                        "note": data.get("note"),
+                    }
+        except Exception:
+            coach = None
+
         return {
             "message": "Goal found successfully",
             "data": _to_out(goal),
+            "coach": coach
         }
     except Exception:
         return JSONResponse(
@@ -971,38 +1068,5 @@ async def remove_goal(id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"message": "Internal server error while deleting goal"},
         )
-
-
-# ----- Helpers -----
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
-        status_code=400,
-        content={
-            "message": "Bad request",
-            "errors": exc.errors()  
-        },
-    )
-
-def _to_out(d: dict) -> GoalOut:
-    return GoalOut(
-        id=str(d.get("_id")),                       
-        userId=d["userId"],                        
-        year=d["year"],                              
-        targetBooks=d["targetBooks"],                
-        books=[BookRef(**b) for b in d.get("books", [])],
-        completedBooks=d.get("completedBooks", 0),   
-        createdAt=d["createdAt"],                    
-    )
-
-def _rb_to_out(d: dict) -> ReadBookOut:
-    return ReadBookOut(
-        id=str(d.get("_id")),
-        userId=d["userId"],
-        book=BookRef(**d["book"]),
-        fromGoalId=str(d["fromGoalId"]) if d.get("fromGoalId") else None,
-        createdAt=d["createdAt"],
-    )
 
 # SWAGGER: uvicorn app.main:app --reload --port 3004
