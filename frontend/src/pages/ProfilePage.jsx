@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userApi, bookApi, bookshelfApi, reviewApi } from '../api';
+import { userApi, bookApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
@@ -109,14 +109,17 @@ const ProfilePage = () => {
 
     const handleChallengeSubmit = async () => {
         if (!challengeInput || isNaN(challengeInput)) return;
-        const newChallenge = { goal: parseInt(challengeInput), completed: 0 };
         try {
-            //await userApi.patch('/me', { readingChallenge: newChallenge });
-            setReadingChallenge(newChallenge);
+            await statisticApi.post(
+                '/goals',
+                { userId: user._id, targetBooks: parseInt(challengeInput) },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
+            setReadingChallenge({ goal: parseInt(challengeInput), completed: 0 });
             setShowChallengeForm(false);
             setChallengeInput('');
-        } catch {
-            setError('Failed to set challenge');
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to set challenge');
         }
     };
 

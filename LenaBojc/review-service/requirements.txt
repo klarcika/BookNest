@@ -5,3 +5,4 @@ motor==3.5.1
 pymongo==4.8.0
 python-dotenv==1.0.1
 httpx
+PyJWT==2.8.0
