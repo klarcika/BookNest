@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  seznamObvestil, enoObvestilo, dodajObvestilo, posodobiObvestilo, izbrisiObvestilo, izbrisiVsaZaUporabnika
+  seznamObvestil, enoObvestilo, dodajObvestilo, posodobiObvestilo, izbrisiObvestilo, izbrisiVsaZaUporabnika, authenticateToken
 } from "../controllers/obvestilo.controller.js";
 
 const r = Router();
@@ -32,7 +32,7 @@ const r = Router();
  *       500:
  *         description: Napaka pri pridobivanju obvestil
  */
-r.get("/", seznamObvestil);
+r.get("/",authenticateToken, seznamObvestil);
 
 /**
  * @swagger

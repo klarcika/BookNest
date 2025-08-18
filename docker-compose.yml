@@ -14,6 +14,7 @@ services:
       FRONTEND_URL: http://frontend:3000
       REVIEWS_API_URL: http://backend-reviews:3002
       CONTENT_NOTICES_URL: https://contentnotices.onrender.com/v1/content-notices
+      BOOK_BADGES_URL: https://book-badges.vercel.app/api/book-badges
     # depends_on:
     #   - db-books
     networks:

@@ -1,15 +1,25 @@
 import Obvestilo from "../models/obvestilo.model.js";
+import jwt from 'jsonwebtoken';
+
 const STATISTICS_API_URL = process.env.STATISTICS_API_URL || "http://backend-statistics:3004";
 const QUOTE_API_URL = process.env.QUOTE_API_URL;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+export function authenticateToken(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+    req.user = decoded;
+    next();
+  });
+}
 
 export const seznamObvestil = async (req, res) => {
   try {
-    const { uporabnikId, status, tip } = req.query;
-    const q = {};
-    if (uporabnikId) q.uporabnikId = uporabnikId;
-    if (status) q.status = status;
-    if (tip) q.tip = tip;
-    const vrstice = await Obvestilo.find(q).sort({ datumUstvarjeno: -1 }).lean();
+    const uporabnikId = req.user.id; // uporabnik iz JWT
+    const vrstice = await Obvestilo.find({ uporabnikId }).sort({ datumUstvarjeno: -1 }).lean();
     res.status(200).json(vrstice);
   } catch (err) {
     res.status(500).json({ sporocilo: "Napaka pri pridobivanju obvestil", napaka: err.message });

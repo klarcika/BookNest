@@ -114,7 +114,7 @@ router.get('/', controller.getAllRecommendations);
  *       500:
  *         description: Napaka na strežniku
  */
-router.post('/:userId', controller.createRecommendationsForUser);
+router.post('/:userId', controller.addRecommendationsForUser);
 
 /**
  * @swagger
