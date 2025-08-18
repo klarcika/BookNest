@@ -11,7 +11,7 @@ export const bookApi = axios.create({
 });
 
 export const bookshelfApi = axios.create({
-    baseURL: 'http://localhost:3002/shelves',
+    baseURL: 'http://localhost:3005/shelves',
     withCredentials: true,
 });
 

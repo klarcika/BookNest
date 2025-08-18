@@ -1,28 +1,43 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-
-// link do login je skrit ko je uporabnik prijavljen
+import React, {useState, useEffect} from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
-    //<NavLink to="/register" className={linkClass}>Register</NavLink>
     const linkClass = ({ isActive }) =>
         isActive
             ? 'text-white border-b-2 border-white pb-1'
             : 'text-gray-300 hover:text-white';
 
+    const [userId, setUserId] = useState(localStorage.getItem('userId'));
+    const location = useLocation();
+
+    useEffect(() => {
+        if (localStorage.getItem('jwtToken')) {
+            setUserId(localStorage.getItem('userId'));
+        } else {
+            setUserId(null);
+            localStorage.removeItem('userId');
+        }
+    }, [location]);
+
     return (
         <nav className="bg-gray-800 text-white p-4 flex justify-between items-center text-xl">
             <div className="flex gap-8">
                 <NavLink to="/" className={linkClass}>Home</NavLink>
-                <NavLink to="/recommendations" className={linkClass}>Recommendations</NavLink>
-                <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
-
-
+                {userId && (
+                    <NavLink to="/recommendations" className={linkClass}>Recommendations</NavLink>
+                )}
+                {userId && (
+                    <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
+                )}
             </div>
 
             <div className="flex gap-6">
-                <NavLink to="/login" className={linkClass}>Login</NavLink>
-                <NavLink to="/profile/:id" className={linkClass}>Profile</NavLink>
+                {!userId && (
+                    <NavLink to="/login" className={linkClass}>Login</NavLink>
+                )}
+                {userId && (
+                    <NavLink to={`/profile/${userId}`} className={linkClass}>Profile</NavLink>
+                )}
             </div>
         </nav>
     )

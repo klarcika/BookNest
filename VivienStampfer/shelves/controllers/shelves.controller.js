@@ -1,21 +1,18 @@
 import Shelves from "../models/shelves.model.js";
 import jwt from 'jsonwebtoken';
 const BOOKS_API_URL = process.env.BOOKS_API_URL || "http://localhost:3032";
+const JWT_SECRET = process.env.JWT_SECRET
 
-const authenticateToken = (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: 'No token provided' });
+export const authenticateToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token provided' });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
-    req.user = decoded; // Shranimo decoded podatke (npr. id, email) za kasnejšo uporabo
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+        req.user = decoded;
+        next();
+    });
 };
-
-export { authenticateToken };
 
 export const getShelves = async (req, res) => {
   try {
@@ -79,10 +76,12 @@ export const deleteShelves = async (req, res) => {
 export const dodajKnjigoVWantToRead = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { bookId, date } = req.body;
-    if (!bookId || !date) {
-      return res.status(400).json({ message: "bookId in date sta obvezna" });
+    const { bookId } = req.body;
+    if (!bookId) {
+      return res.status(400).json({ message: "bookId je obvezen" });
     }
+
+    const date = new Date().toJSON();
 
     const rezultat = await Shelves.findOneAndUpdate(
       { userId },

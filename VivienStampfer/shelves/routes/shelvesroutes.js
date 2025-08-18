@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  authenticateToken,
   getShelves,
   getShelvesById,
   createShelves,
@@ -42,7 +43,8 @@ const r = Router();
  *       500:
  *         description: Napaka pri pridobivanju polic
  */
-r.get("/", getShelves);
+//r.get("/", getShelves);
+r.get("/", authenticateToken, getShelves);
 
 /**
  * @swagger
@@ -65,7 +67,8 @@ r.get("/", getShelves);
  *       500:
  *         description: Napaka pri pridobivanju polic po ID
  */
-r.get("/:id", getShelvesById);
+//r.get("/:id", getShelvesById);
+r.get("/:id", authenticateToken, getShelvesById);
 
 /**
  * @swagger
@@ -127,7 +130,8 @@ r.get("/:id", getShelvesById);
  *       500:
  *         description: Napaka pri ustvarjanju polic
  */
-r.post("/", createShelves);
+//r.post("/", createShelves);
+r.post("/", authenticateToken, createShelves);
 
 /**
  * @swagger
@@ -161,7 +165,8 @@ r.post("/", createShelves);
  *       500:
  *         description: Napaka pri posodabljanju polic
  */
-r.put("/:id", updateShelves);
+//r.put("/:id", updateShelves);
+r.put("/:id", authenticateToken, updateShelves);
 
 /**
  * @swagger
@@ -184,7 +189,8 @@ r.put("/:id", updateShelves);
  *       500:
  *         description: Napaka pri brisanju polic
  */
-r.delete("/:id", deleteShelves);
+//r.delete("/:id", deleteShelves);
+r.delete("/:id", authenticateToken, deleteShelves);
 
 /**
  * @swagger
@@ -222,7 +228,8 @@ r.delete("/:id", deleteShelves);
  *       500:
  *         description: Napaka pri dodajanju na wantToRead
  */
-r.put("/:userId/wantToRead", dodajKnjigoVWantToRead);
+//r.put("/:userId/wantToRead", dodajKnjigoVWantToRead);
+r.put("/:userId/wantToRead", authenticateToken, dodajKnjigoVWantToRead);
 
 /**
  * @swagger
@@ -260,7 +267,8 @@ r.put("/:userId/wantToRead", dodajKnjigoVWantToRead);
  *       500:
  *         description: Napaka pri dodajanju na reading
  */
-r.put("/:userId/reading" ,dodajKnjigoVReading);
+//r.put("/:userId/reading" ,dodajKnjigoVReading);
+r.put("/:userId/reading", authenticateToken, dodajKnjigoVReading);
 
 /**
  * @swagger
@@ -298,7 +306,8 @@ r.put("/:userId/reading" ,dodajKnjigoVReading);
  *       500:
  *         description: Napaka pri dodajanju na read
  */
-r.put("/:userId/read", dodajKnjigoVRead);
+//r.put("/:userId/read", dodajKnjigoVRead);
+r.put("/:userId/read", authenticateToken, dodajKnjigoVRead);
 
 /**
  * @swagger
@@ -363,7 +372,8 @@ r.put("/:userId/read", dodajKnjigoVRead);
  *       500:
  *         description: Napaka pri premikanju knjige med policami
  */
-r.post("/:userId/move", premakniKnjigoMedPolicami);
+//r.post("/:userId/move", premakniKnjigoMedPolicami);
+r.post("/:userId/move", authenticateToken, premakniKnjigoMedPolicami);
 
 /**
  * @swagger
@@ -387,7 +397,8 @@ r.post("/:userId/move", premakniKnjigoMedPolicami);
  *       500:
  *         description: Napaka pri brisanju polic po userId
  */
-r.delete("/by-user/:userId", izbrisiShelvesByUser);
+//r.delete("/by-user/:userId", izbrisiShelvesByUser);
+r.delete("/by-user/:userId", authenticateToken, izbrisiShelvesByUser);
 
 /**
  * @swagger
@@ -426,7 +437,8 @@ r.delete("/by-user/:userId", izbrisiShelvesByUser);
  *       500:
  *         description: Napaka pri odstranjevanju knjige s police
  */
-r.delete("/:userId/:shelf/:bookId",izbrisiKnjigoSPolice);
+//r.delete("/:userId/:shelf/:bookId",izbrisiKnjigoSPolice);
+r.delete("/:userId/:shelf/:bookId", authenticateToken, izbrisiKnjigoSPolice);
 
 /**
  * @swagger
@@ -497,6 +509,7 @@ r.delete("/:userId/:shelf/:bookId",izbrisiKnjigoSPolice);
  *       500:
  *         description: napaka
  */
-r.get("/:userId/read/books", getReadBooksForUser);
+//r.get("/:userId/read/books", getReadBooksForUser);
+r.get("/:userId/read/books", authenticateToken, getReadBooksForUser);
 
 export default r;

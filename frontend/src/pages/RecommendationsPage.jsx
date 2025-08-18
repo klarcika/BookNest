@@ -25,23 +25,29 @@ const RecommendationsPage = () => {
                 setRecommendations(recRes.data.recommendedBooks || []);
 
                 // 2️⃣ Pridobi vse knjige
-                const booksRes = await bookApi.get('/books/allBooks');
+                const booksRes = await bookApi.get('/allBooks');
                 console.log('Books response:', booksRes.data);
                 setBooks(booksRes.data || []);
 
                 // 3️⃣ Pridobi uporabnikove police
-                const userRes = await bookshelfApi.get(`/shelves?userId=${currentUserId}`);
-                console.log('Shelves response:', userRes.data);
-                const shelfData = userRes.data[0]?.shelves || { wantToRead: [], read: [], currentlyReading: [] };
+                const userRes = await bookshelfApi.get(
+                    `/?userId=${currentUserId}`,
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                );
+                console.log('Shelves response:', userRes?.data[0].shelves);
+                const shelfData = userRes?.data[0]?.shelves || { wantToRead: [], read: [], currentlyReading: [] };
                 setUserShelves({
                     wantToRead: shelfData.wantToRead || [],
                     read: shelfData.read || [],
-                    currentlyReading: shelfData.reading || [],
+                    currentlyReading: shelfData.currentlyReading || [],
                 });
 
             } catch (err) {
                 console.error("❌ Napaka pri pridobivanju podatkov:", err.response?.data || err.message);
                 setError('Failed to load recommendations. Check console for details.');
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                }
             } finally {
                 setLoading(false);
             }
@@ -59,10 +65,17 @@ const RecommendationsPage = () => {
                 wantToRead: [...prev.wantToRead, bookId]
             }));
 
-            await bookshelfApi.post(`/${currentUserId}/want-to-read`, { bookId });
+            await bookshelfApi.put(
+                `/${currentUserId}/wantToRead`,
+                { bookId },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
         } catch (err) {
             console.error("❌ Napaka pri dodajanju knjige:", err.response?.data || err.message);
             setError('Failed to add book to want to read.');
+            if (err?.response?.status === 401 || err?.response?.status === 403) {
+                localStorage.removeItem('jwtToken');
+            }
         }
     };
 

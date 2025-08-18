@@ -1,12 +1,33 @@
-//const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../model/user');
+require('dotenv').config();
 
-/*const JWT_SECRET = process.env.JWT_SECRET
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET
-const JWT_EXPIRES_IN = '1h';
-const REFRESH_TOKEN_EXPIRES_IN = '7d';*/
-// REGISTER
+const JWT_SECRET = process.env.JWT_SECRET
+const JWT_ISSUER = process.env.JWT_ISSUER || 'booknest-user-service';
+
+function issueToken(user) {
+    const payload = {
+        sub: user.id,
+        name: user.profile.name,
+        role: user.role,
+        iat: Math.floor(Date.now() / 1000),
+        iss: JWT_ISSUER,
+    };
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+}
+
+function authenticateToken(req, res, next) {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token provided' });
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+        req.user = decoded;
+        next();
+    });
+}
+
 async function registerUser(req, res) {
     console.log('Registering user');
     const { email, password, name } = req.body;
@@ -19,12 +40,15 @@ async function registerUser(req, res) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.add(email, hashedPassword, name);
         console.log(newUser);
-        res.status(200).json({ message: 'User successfully registered', user: newUser });
+
+        const token = issueToken(newUser);
+
+        res.status(200).json({ token, newUser });
     } catch (err) {
         res.status(500).json({ error: 'Registration failed', details: err.message });
     }
 }
-// LOGIN
+
 async function loginUser(req, res) {
     const { email, password } = req.body;
     try {
@@ -33,55 +57,15 @@ async function loginUser(req, res) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        /*const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role, name: user.profile.name },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-        const refreshToken = jwt.sign(
-            { id: user.id, email: user.email },
-            REFRESH_TOKEN_SECRET,
-            { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
-        );
+        const token = issueToken(user);
 
-        user.refreshToken = refreshToken;
-        await db.collection('Users').doc(user.id).set(user, { merge: true }); // Posodobi dokument
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 3600 * 1000
-        });
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 3600 * 1000
-        });*/
-
-        res.status(200).json({message: 'Login successful', user: user});
+        res.status(200).json({ token, user });
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed', details: err.message });
     }
 }
-// TRENUTNI UPORABNIK
-/*async function getCurrentUser(req, res) {
-    try {
-        const user = req.user;
-        res.status(200).json({
-            id: user.id,
-            email: user.email,
-            profile: user.profile,
-            role: user.role
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Error retrieving user', details: error.message });
-    }
-}*/
 
-// OSTALI ENDPOINTI
 async function findUser(req, res) {
     const { id } = req.body;
     if (!id) {
@@ -202,87 +186,11 @@ async function deleteUsersByEmailDomain(req, res) {
         res.status(500).json({ details: error.message });
     }
 }
-//--------------------
-// Middleware za preverjanje JWT
-/*const authenticateToken = async (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ error: 'No token provided' });
-
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await User.getById(decoded.id);
-        if (!user) return res.status(401).json({ error: 'User not found' });
-        req.user = user;
-        next();
-    } catch (err) {
-        // token je potekel -> preverimo refresh
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) return res.status(401).json({ error: 'No refresh token available' });
-
-        try {
-            const decodedRefresh = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-            const user = await User.getById(decodedRefresh.id);
-            if (!user || user.refreshToken !== refreshToken) {
-                return res.status(401).json({ error: 'Invalid refresh token' });
-            }
-
-            // ustvarimo NOV token
-            const newToken = jwt.sign(
-                { id: user.id, email: user.email, role: user.role, name: user.profile.name },
-                JWT_SECRET,
-                { expiresIn: JWT_EXPIRES_IN }
-            );
-
-            res.cookie('token', newToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-                maxAge: 3600 * 1000
-            });
-
-            req.user = user;
-            next();
-        } catch (refreshErr) {
-            return res.status(401).json({ error: 'Authentication failed', details: refreshErr.message });
-        }
-    }
-};
-// OSVEŽI TOKEN
-async function refreshToken(req, res) {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) return res.status(401).json({ error: 'No refresh token provided' });
-
-    try {
-        const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-        const user = await User.getById(decoded.id);
-        if (!user || user.refreshToken !== refreshToken) {
-            return res.status(401).json({ error: 'Invalid refresh token' });
-        }
-
-        const newToken = jwt.sign(
-            { id: user.id, email: user.email, role: user.role, name: user.profile.name },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.cookie('token', newToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 3600 * 1000
-        });
-
-        res.status(200).json({ message: 'Token refreshed' });
-    } catch (error) {
-        res.status(401).json({ error: 'Invalid refresh token', details: error.message });
-    }
-}*/
-
 
 module.exports = {
+    authenticateToken,
     registerUser,
     loginUser,
-    //getCurrentUser,
     findUser,
     allUsers,
     findEmail,
@@ -291,6 +199,4 @@ module.exports = {
     changeUserPreferences,
     deleteUser,
     deleteUsersByEmailDomain
-    /*authenticateToken,
-    refreshToken*/
 };

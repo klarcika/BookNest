@@ -7,9 +7,14 @@ const AdminPage = () => {
     const [newBook, setNewBook] = useState({
         title: '',
         author: '',
+        genres: [],
         publishedYear: '',
+        isbn: '',
         description: '',
         coverUrl: '',
+        averageRating: 0,
+        ratingsCount: 0,
+        pages: 0,
     });
     const [reviews, setReviews] = useState([]);
     const [error, setError] = useState('');
@@ -55,12 +60,18 @@ const AdminPage = () => {
     const handleBookSubmit = async (e) => {
         e.preventDefault();
         try {
-            await bookApi.post('/books', newBook);
+            await bookApi.post('/addBook',
+                newBook,
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
             setNewBook({ title: '', author: '', publishedYear: '', description: '', coverUrl: '' });
             setError('');
             alert('Book added successfully!');
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to add book');
+            if (err?.response?.status === 401 || err?.response?.status === 403) {
+                localStorage.removeItem('jwtToken');
+            }
         }
     };
 

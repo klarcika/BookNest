@@ -20,7 +20,7 @@ class Book {
             const date = new Date().toJSON();
             const id = title.toLowerCase().replace(/\s+/g, '') + "_" + date.replace(/[:.]/g, '-');
             const newBook = {
-                id: id,
+                _id: id,
                 title: title,
                 author: author,
                 genres: genres,
@@ -48,7 +48,7 @@ class Book {
 
             books.forEach(book => {
                 const id = book.title.toLowerCase().replace(/\s+/g, '') + "_" + date.replace(/[:.]/g, '-');
-                const bookData = { ...book, createdAt: date.replace(/[:.]/g, '-'), updatedAt: date.replace(/[:.]/g, '-') };
+                const bookData = { ...book, createdAt: date.replace(/[:.]/g, '-'), updatedAt: date.replace(/[:.]/g, '-'), _id: id };
                 const docRef = db.collection("Books").doc(id);
                 batch.set(docRef, bookData);
             });

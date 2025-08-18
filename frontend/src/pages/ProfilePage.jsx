@@ -3,8 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { userApi, bookApi, bookshelfApi, reviewApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
-// nekje more bit dodan logout gumb
-
 const ProfilePage = () => {
     const { id } = useParams();
     const [user, setUser] = useState({ profile: { name: 'Unknown', bio: '' }, email: '' });
@@ -22,36 +20,53 @@ const ProfilePage = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            console.log('id: ', id);
             try {
-                const userRes = await userApi.post('/id', { id });
+                const userRes = await userApi.post('/id',
+                    { id: id },
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                );
                 setUser(userRes?.data || { profile: { name: 'Unknown', bio: '' }, email: '' });
 
-                const shelvesRes = await bookshelfApi.get('/?userId=' + userRes?.data?.id);
+                console.log('user: ', userRes?.data);
+
+                const shelvesRes = await bookshelfApi.get(
+                    `/?userId=${userRes?.data?._id}`,
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                );
+
+                console.log('shelves: ', shelvesRes?.data[0]?.shelves);
                 const shelfData = shelvesRes?.data?.[0]?.shelves || { wantToRead: [], currentlyReading: [], read: [] };
+                console.log(shelfData);
                 setBookshelves({
                     wantToRead: shelfData.wantToRead || [],
                     currentlyReading: shelfData.currentlyReading || [],
                     read: shelfData.read || [],
                 });
 
-                const booksRes = await bookApi.get('/');
-                setBooks(booksRes?.data || []);
+                // ???????
+                /*const booksRes = await bookApi.get('/');
+                setBooks(booksRes?.data || []);*/
             } catch (err) {
                 setError(err?.response?.data?.error || 'Failed to fetch data');
-                if (err?.response?.status === 401) {
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                    navigate('/login');
+                }
+                /*if (err?.response?.status === 401) {
                     try {
                         //await userApi.post('/refresh-token');
                         await fetchData(); // retry
                     } catch {
                         navigate('/login');
                     }
-                }
+                }*/
             }
         };
         fetchData();
     }, [navigate]);
 
-    const getBook = (id) => books.find((b) => b?._id === id);
+    const getBook = (id) => books.find((b) => b?.id === id);
 
     const handleMove = async (bookId, fromShelf, toShelf) => {
         if (fromShelf === toShelf) return;
@@ -69,12 +84,16 @@ const ProfilePage = () => {
                 ],
             };
 
-            await bookshelfApi.post(`/${user?.id}/move`, {
-                from: fromShelf,
-                to: toShelf,
-                bookId,
-                date: new Date().toISOString(),
-            });
+            await bookshelfApi.post(
+                `/${user?._id}/move`,
+                {
+                    from: fromShelf,
+                    to: toShelf,
+                    bookId,
+                    date: new Date().toISOString(),
+                },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
 
             setBookshelves(updatedShelves);
 
@@ -100,7 +119,7 @@ const ProfilePage = () => {
         if (!challengeInput || isNaN(challengeInput)) return;
         const newChallenge = { goal: parseInt(challengeInput), completed: 0 };
         try {
-            await userApi.patch('/me', { readingChallenge: newChallenge });
+            //await userApi.patch('/me', { readingChallenge: newChallenge });
             setReadingChallenge(newChallenge);
             setShowChallengeForm(false);
             setChallengeInput('');
@@ -170,6 +189,19 @@ const ProfilePage = () => {
     return (
         <div>
             {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+            <div className="flex justify-end mb-4">
+                <button
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded"
+                    onClick={() => {
+                        localStorage.removeItem('jwtToken');
+                        navigate('/login');
+                    }}
+                >
+                    Logout
+                </button>
+            </div>
+
             <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
 
             <div className="bg-white rounded shadow p-6 mb-6 text-left max-w-4xl mx-auto">

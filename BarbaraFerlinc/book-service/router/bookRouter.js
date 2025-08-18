@@ -64,7 +64,8 @@ const bookController = require('../controller/bookController');
  *       200:
  *         description: Book successfully added
  */
-router.post('/addBook', bookController.addBook);
+//router.post('/addBook', bookController.addBook);
+router.post('/addBook', bookController.authenticateToken, bookController.addBook);
 
 /**
  * @swagger
@@ -93,7 +94,8 @@ router.post('/addBook', bookController.addBook);
  *                   items:
  *                     $ref: '#/components/schemas/Book'
  */
-router.post('/addMultipleBooks', bookController.addMultipleBooks);
+//router.post('/addMultipleBooks', bookController.addMultipleBooks);
+router.post('/addMultipleBooks', bookController.authenticateToken, bookController.addMultipleBooks);
 
 /**
  * @swagger
@@ -188,7 +190,8 @@ router.get('/genre/:genre', bookController.findBookByGenre);
  *             schema:
  *               $ref: '#/components/schemas/Book'
  */
-router.put('/:id', bookController.changeBook);
+//router.put('/:id', bookController.changeBook);
+router.put('/:id', bookController.authenticateToken, bookController.changeBook);
 
 /**
  * @swagger
@@ -211,7 +214,8 @@ router.put('/:id', bookController.changeBook);
  *             schema:
  *               $ref: '#/components/schemas/Book'
  */
-router.put('/rating/:id', bookController.changeBookRating);
+//router.put('/rating/:id', bookController.changeBookRating);
+router.put('/rating/:id', bookController.authenticateToken, bookController.changeBookRating);
 
 /**
  * @swagger
@@ -230,7 +234,8 @@ router.put('/rating/:id', bookController.changeBookRating);
  *       200:
  *         description: Book successfully deleted
  */
-router.delete('/:id', bookController.deleteBook);
+//router.delete('/:id', bookController.deleteBook);
+router.delete('/:id', bookController.authenticateToken, bookController.deleteBook);
 
 /**
  * @swagger
@@ -256,6 +261,7 @@ router.delete('/:id', bookController.deleteBook);
  *                 message:
  *                   type: string
  */
-router.delete('/author/:author', bookController.deleteBooksByAuthor);
+//router.delete('/author/:author', bookController.deleteBooksByAuthor);
+router.delete('/author/:author', bookController.authenticateToken, bookController.deleteBooksByAuthor);
 
 module.exports = router;

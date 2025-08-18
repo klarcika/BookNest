@@ -17,22 +17,30 @@ const BookDetails = () => {
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) {
-            navigate("/login");
-            return;
+            setUser(null);
         }
 
         const fetchData = async () => {
             try {
                 // Pridobi podatke o knjigi
-                const bookRes = await bookApi.get(`/books/${id}`);
+                const bookRes = await bookApi.get(`/${id}`);
                 setBook(bookRes.data);
                 setComments(bookRes.data.comments || []);
 
                 // Pridobi podatke o trenutnem uporabniku
-                const userRes = await userApi.get("/users/me");
-                setUser(userRes.data);
+                //const userRes = await userApi.get("/users/me");
+                if (token) {
+                    const userRes = await userApi.post('/id',
+                        { id: localStorage.getItem('userId') },
+                        { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                    );
+                    setUser(userRes?.data);
+                }
             } catch (err) {
                 setError(err.response?.data?.error || "Failed to fetch data");
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                }
             }
         };
 

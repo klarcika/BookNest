@@ -1,5 +1,4 @@
 const db = require('../db');
-const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const statisticsApi = process.env.STATISTICS_API_URL || 'http://localhost:3004';
@@ -11,7 +10,7 @@ class User {
             const id = email + "_" + date.replace(/[:.]/g, '-');
 
             const newUser = {
-                id: id,
+                _id: id,
                 username: email,
                 email: email.toLowerCase(),
                 passwordHash: password,
@@ -63,7 +62,7 @@ class User {
             const response = await usersRef.get();
             const users = [];
             response.forEach((doc) => {
-                users.push({ ...doc.data(), id: doc.id });
+                users.push({ ...doc.data(), _id: doc._id });
             });
             return users;
         } catch (error) {
@@ -209,15 +208,16 @@ class User {
             throw new Error('Error deleting users by email domain: ' + error.message);
         }
     }
-    static async save(userData) {
+    
+    /*static async save(userData) {
         try {
             const userRef = db.collection('Users').doc(userData.id);
             await userRef.set(userData, { merge: true });
-            return { id: userRef.id, ...userData };
+            return { id: userRef._id, ...userData };
         } catch (error) {
             throw new Error('Error saving user to database: ' + error.message);
         }
-    }
+    }*/
 }
 
 module.exports = User;

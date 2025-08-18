@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { userApi } from '../api';
+import { userApi, bookshelfApi } from '../api';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -9,6 +9,7 @@ const RegisterPage = () => {
         name: '',
     });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -18,16 +19,34 @@ const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        // tu se more dat neki loading
+        setLoading(true);
 
         try {
             const response = await userApi.post('/register', formData, { withCredentials: true });
             if (response.status === 200) {
-                const { id } = response.data.user;
-                navigate(`/profile/${id}`);
+                const { token, newUser } = response.data;
+                localStorage.setItem('jwtToken', token);
+                localStorage.setItem('userId', newUser._id);
+
+                const response1 = await bookshelfApi.post('/',
+                    {
+                        userId: newUser._id,
+                        shelves: {
+                            "wantToRead": [],
+                            "reading": [],
+                            "read": []
+                        }
+                    },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (response1.status === 201) {
+                    navigate(`/profile/${newUser._id}`);
+                }
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -78,9 +97,10 @@ const RegisterPage = () => {
 
                 <button
                     type="submit"
-                    className="bg-purple-600 text-white text-xl font-medium w-full py-3 rounded-lg hover:bg-purple-700 transition"
+                    className={`w-full py-3 rounded-lg text-xl font-medium transition 
+                        ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 text-white"}`}
                 >
-                    Register
+                    {loading ? "Registering..." : "Register"}
                 </button>
                 <div className="w-full rounded-lg px-4 py-3 mt-2 text-base">
                     <p className="text-md">Already have an account?</p>

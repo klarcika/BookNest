@@ -6,22 +6,26 @@ const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // tu se more dodat neki loading
+        setLoading(true);
         
         try {
             const response = await userApi.post('/login', { email, password }, { withCredentials: true });
             if (response.status === 200) {
-                const { id } = response.data.user;
-                //localStorage.setItem('userId', id); // Shranimo v localStorage
-                navigate(`/profile/${id}`);
+                const { token, user } = response.data;
+                localStorage.setItem('jwtToken', token);
+                localStorage.setItem('userId', user._id);
+                navigate(`/profile/${user._id}`);
             }
         } catch (err) {
             console.error('Login error:', err.response?.data);
             setError(err.response?.data?.error || 'Login failed');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -51,8 +55,12 @@ const LoginPage = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700">
-                        Login
+                    <button
+                        type="submit"
+                        className={`w-full p-2 rounded hover:bg-purple-700 transition 
+                            ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 text-white"}`}
+                    >
+                        {loading ? "Logging in..." : "Login"}
                     </button>
                     <div className="w-full rounded-lg px-4 py-3 mt-2 text-base">
                         <p className="text-md">Don't have an account yet?</p>

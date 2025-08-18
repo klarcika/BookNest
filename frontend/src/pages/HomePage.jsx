@@ -20,15 +20,20 @@ const HomePage = () => {
     useEffect(() => {
         const fetchUserAndShelves = async () => {
             try {
-                const userRes = await userApi.get('/me');
-                const uid = userRes?.data?.id;
+                const uid = localStorage.getItem('userId');
                 setUserId(uid);
 
-                const shelvesRes = await bookshelfApi.get(`/?userId=${uid}`);
+                const shelvesRes = await bookshelfApi.get(
+                    `/?userId=${uid}`,
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                );
                 const shelfData = shelvesRes?.data?.[0]?.shelves || {};
                 setWantToRead(shelfData.wantToRead?.map(item => item.bookId) || []);
             } catch (err) {
-                setError(err?.response?.data?.error || 'Failed to fetch user or shelves');
+                setError(err?.response?.data?.error || 'Failed to fetch user or shelves. Please log in again.');
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                }
             }
         };
         fetchUserAndShelves();
@@ -38,14 +43,19 @@ const HomePage = () => {
         if (!userId) return;
         if (!wantToRead.includes(bookId)) {
             try {
-                const res = await bookshelfApi.put(`/${userId}/wantToRead`, {
-                    bookId,
-                    date: new Date().toISOString()
-                });
+                // dodaj: če je že na seznamu se ne more dodat, nekje se more gledat ali je že na seznamu ali ne da se tudi na cardu prikaže
+                await bookshelfApi.put(
+                    `/${userId}/wantToRead`,
+                    { bookId },
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+                );
 
                 setWantToRead(prev => [...prev, bookId]);
             } catch (err) {
                 setError(err?.response?.data?.error || 'Failed to add book');
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                }
             }
         }
     };
@@ -77,6 +87,7 @@ const HomePage = () => {
                         book={book}
                         added={wantToRead.includes(book._id)}
                         onAddToWantToRead={() => handleAddToWantToRead(book._id)}
+                        userId={userId}
                     />
                 ))}
             </div>
