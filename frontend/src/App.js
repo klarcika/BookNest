@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import BookDetails from "./components/BookDetails";
 import AdminPage from "./pages/AdminPage";
+import MotivationPage from "./pages/MotivationPage";
 
 
 const App = () => {
@@ -27,6 +28,7 @@ const App = () => {
                         <Route path="/login" element={<LoginPage/>}/>
                         <Route path="/register" element={<RegisterPage/>}/>
                         <Route path="/admin" element={<AdminPage/>}/>
+                        <Route path="/motivation" element={<MotivationPage />}/>
                     </Routes>
                 </main>
             </div>

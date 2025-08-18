@@ -5,7 +5,6 @@ from datetime import datetime
 # ----- IN -----
 class BookRef(BaseModel):
     bookId: str = Field(..., example="book_id_123")
-    title: str = Field(..., example="The Great Gatsby")
     finishedAt: Optional[datetime] = Field(None, example="2023-10-01T12:00:00Z")
     genre: Optional[List[str]] = Field(None, example=["Fiction", "Mystery"])
     pages: Optional[int] = Field(None, example=300)
@@ -18,7 +17,7 @@ class GoalTargetIn(BaseModel):
     targetBooks: int = Field(..., ge=1, example=12)
 
 class GoalAddBookIn(BaseModel):
-    userId: str = Field(..., min_length=1, example="u1")
+    # userId: str = Field(..., min_length=1, example="u1")
     book: BookRef = Field(..., description="Book to add to the goal")
 
 class GoalRemoveBookIn(BaseModel):
@@ -36,7 +35,7 @@ class GoalOut(BaseModel):
     year: int = Field(..., example=2023)
     targetBooks: int = Field(..., example=10)
     books: List[BookRef] = Field(default_factory=list, example=[
-        BookRef(bookId="book_id_123", title="The Great Gatsby", finishedAt="2023-10-01T12:00:00Z", genre=["Fiction", "Mystery"], pages=300)
+        BookRef(bookId="book_id_123", finishedAt="2023-10-01T12:00:00Z", genre=["Fiction", "Mystery"], pages=300)
     ])
     completedBooks: int = Field(..., example=5)
     createdAt: datetime
