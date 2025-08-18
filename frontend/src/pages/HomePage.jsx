@@ -15,15 +15,35 @@ const HomePage = () => {
         const fetchBooks = async () => {
             try {
                 const res = await bookApi.get('/allBooks');
+                console.log("API response:", res.data); // 🔎 izpiše vse iz API
+
                 const booksFromApi = res.data.books || [];
 
                 const uid = localStorage.getItem('userId');
                 setUserId(uid);
 
-                // Keep only valid books with title
-                const validBooks = booksFromApi.filter(book => book && book.title);
-                setBooks(validBooks);
+                // Zaenkrat ne filtriraj po title
+                // Če rabiš default vrednosti, lahko jih sam dodaš
+                const booksWithDefaults = booksFromApi.map(book => ({
+                    title: book.title || "Untitled",
+                    author: book.author || "Unknown Author",
+                    genres: book.genres || [],
+                    publishedYear: book.publishedYear || "N/A",
+                    isbn: book.isbn || "",
+                    description: book.description || "",
+                    coverUrl: book.coverUrl || "",
+                    averageRating: book.averageRating || 0,
+                    ratingsCount: book.ratingsCount || 0,
+                    pages: book.pages || 0,
+                    _id: book._id || Math.random().toString(36).substr(2, 9) // fallback key
+                }));
+
+                console.log("Books after mapping:", booksWithDefaults);
+
+                setBooks(booksWithDefaults);
+
             } catch (err) {
+                console.error("Fetch error:", err);
                 setError(err?.response?.data?.error || 'Failed to fetch books');
             }
         };
@@ -69,6 +89,7 @@ const HomePage = () => {
     };
 
 
+
     return (
         <div className="max-w-6xl mx-auto p-6">
             {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -105,7 +126,9 @@ const HomePage = () => {
                     />
                 ))}
 
+
             </div>
+
         </div>
     );
 };

@@ -15,10 +15,7 @@ const BookDetails = () => {
                 const response = await bookApi.get(`/${id}`);
                 setBook(response.data);
             } catch (err) {
-                setError(err.response?.data?.error || "Failed to fetch data");
-                if (err?.response?.status === 401 || err?.response?.status === 403) {
-                    localStorage.removeItem('jwtToken');
-                }
+                console.error("Failed to fetch book:", err);
             }
         };
 

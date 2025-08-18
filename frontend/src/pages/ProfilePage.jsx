@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userApi, bookApi, bookshelfApi, reviewApi, statisticApi } from '../api';
+import { userApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
@@ -53,14 +53,6 @@ const ProfilePage = () => {
                     localStorage.removeItem('jwtToken');
                     navigate('/login');
                 }
-                /*if (err?.response?.status === 401) {
-                    try {
-                        //await userApi.post('/refresh-token');
-                        await fetchData(); // retry
-                    } catch {
-                        navigate('/login');
-                    }
-                }*/
             }
         };
         fetchData();
