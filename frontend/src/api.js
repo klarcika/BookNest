@@ -17,10 +17,12 @@ export const bookshelfApi = axios.create({
 
 export const reviewApi = axios.create({
     baseURL: 'http://localhost:3002',
+    withCredentials: true,
 });
 
 export const statisticApi = axios.create({
     baseURL: 'http://localhost:3004',
+    withCredentials: true,
 })
 
 export const recommendationApi = axios.create({
@@ -32,4 +34,5 @@ export const notificationApi = axios.create({
     baseURL: 'http://localhost:3001/obvestila',
     withCredentials: true,
 });
+
 

@@ -23,6 +23,7 @@ const Navbar = () => {
         <nav className="bg-gray-800 text-white p-4 flex justify-between items-center text-xl">
             <div className="flex gap-8">
                 <NavLink to="/" className={linkClass}>Home</NavLink>
+                <NavLink to="/motivation" className={linkClass}>Motivation</NavLink>
                 {userId && (
                     <NavLink to={`/recommendations/${userId}`} className={linkClass}>Recommendations</NavLink>
                 )}
