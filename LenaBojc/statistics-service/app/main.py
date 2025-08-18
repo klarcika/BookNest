@@ -562,7 +562,7 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
     description="Get the current reading goal for a user, identified by their userId.",
     summary="Get user's reading goal",
     tags=["Statistics"],
-    response_model=GoalCreated,
+    response_model=GoalCreatedWithCoach,
     status_code=status.HTTP_200_OK,
     responses={
         200: {
