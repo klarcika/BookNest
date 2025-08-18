@@ -27,13 +27,14 @@ export const getShelves = async (req, res) => {
 
 export const getShelvesById = async (req, res) => {
   try {
-    const shelf = await Shelves.findById(req.params.id).lean();
+    const shelf = await Shelves.findOne({ userId: req.query.userId }).lean();
     if (!shelf) return res.status(404).json({ message: "Police niso najdene" });
     res.status(200).json(shelf);
   } catch (err) {
-    res.status(500).json({ message: "Napaka pri pridobivanju polic po ID", error: err.message });
+    res.status(500).json({ message: "Napaka pri pridobivanju polic po userId", error: err.message });
   }
 };
+
 
 export const createShelves = async (req, res) => {
   try {

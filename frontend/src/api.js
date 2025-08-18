@@ -33,23 +33,3 @@ export const notificationApi = axios.create({
     withCredentials: true,
 });
 
-// Interceptor za osvežitev tokena
-/*[userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi].forEach((api) => {
-    api.interceptors.response.use(
-        (response) => response,
-        async (error) => {
-            if (error.response?.status === 401 && !error.config._retry) {
-                error.config._retry = true;
-                try {
-                    await userApi.post('/refresh-token');
-                    return api(error.config); // Ponovi originalni zahtevek
-                } catch (refreshErr) {
-                    window.location.href = '/login';
-                    return Promise.reject(refreshErr);
-                }
-            }
-            return Promise.reject(error);
-        }
-    );
-});*/
-
