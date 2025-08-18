@@ -11,7 +11,7 @@ const NotificationsPage = () => {
     const fetchNotifications = async () => {
         try {
             const res = await notificationApi.get(
-                `/${id}`,
+                `/`,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` } }
             );
             setNotifications(res.data || []);
