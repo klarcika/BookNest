@@ -37,14 +37,13 @@ const BookDetails = () => {
         if (!newComment.trim()) return;
 
         try {
-            // console.log(`Adding book ${id} to want to read list for user ${localStorage.getItem('userId')}, token: ${localStorage.getItem('jwtToken')}`);
+            console.log(`Adding book ${id} to want to read list for user ${localStorage.getItem('userId')}, token: ${localStorage.getItem('jwtToken')}`);
             const response = await reviewApi.post("/comments", 
                 {
                     userId: localStorage.getItem('userId'),
                     bookId: id,
                     comment: newComment,
                 },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
             );
 
             setComments(prev => [
