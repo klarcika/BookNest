@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { userApi, bookApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
+import GoalContainer from '../components/GoalContainer';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -288,6 +289,8 @@ const ProfilePage = () => {
             </button>
           </div>
         )}
+
+                <GoalContainer />
       </div>
 
       <section className="mb-10 max-w-6xl mx-auto">
