@@ -39,22 +39,27 @@ exports.getAllRecommendations = async (req, res) => {
 };
 
 // ===== POST =====
-exports.createRecommendationsForUser = async (req, res) => {
+exports.addRecommendationsForUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const { recommendedBooks } = req.body;
 
-        const newRec = await Recommendation.create({
-            userId,
-            recommendedBooks,
-            generatedAt: new Date()
-        });
+        // Posodobi obstoječi dokument ali ustvari novega, če še ne obstaja
+        const updatedRec = await Recommendation.findOneAndUpdate(
+            { userId },
+            {
+                $push: { recommendedBooks: { $each: recommendedBooks } },
+                generatedAt: new Date()
+            },
+            { new: true, upsert: true }
+        );
 
-        res.status(201).json(newRec);
+        res.status(200).json(updatedRec);
     } catch (error) {
-        res.status(500).json({ message: 'Napaka pri ustvarjanju priporočil.', error });
+        res.status(500).json({ message: 'Napaka pri dodajanju priporočil.', error });
     }
 };
+
 
 exports.addBookToRecommendations = async (req, res) => {
     try {

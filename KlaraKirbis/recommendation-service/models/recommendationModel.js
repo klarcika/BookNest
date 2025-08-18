@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const recommendationSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, unique: true },
+    userId: { type: mongoose.Schema.Types.String, required: true, unique: true },
     recommendedBooks: [
         {
-            bookId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Book' },
+            bookId: { type: mongoose.Schema.Types.String, required: true, ref: 'Book' },
             reason: { type: String }
         }
     ],
