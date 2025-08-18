@@ -15,31 +15,12 @@ const AdminPage = () => {
         ratingsCount: 0,
         pages: 0,
     });
-    const [reviews, setReviews] = useState([]);
+    //const [reviews, setReviews] = useState([]);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    useEffect(() => {
-        /*const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-
-        try {
-            const decoded = jwtDecode(token);
-            if (decoded.role !== 'admin') {
-                setError('Access denied: Admins only');
-                navigate('/profile');
-                return;
-            }
-        } catch (err) {
-            setError('Invalid token');
-            localStorage.removeItem('token');
-            navigate('/login');
-            return;
-        }*/
-
+    /*useEffect(() => {
+        const token = localStorage.getItem('jwtToken');
         const fetchData = async () => {
             try {
                 const reviewsRes = await reviewApi.get('/reviews');
@@ -50,7 +31,14 @@ const AdminPage = () => {
         };
 
         fetchData();
-    }, [navigate]);
+    }, [navigate]);*/
+
+    // tu nekje se more preverjat role uporabnika, ce ni admin ga navigira na profil ali homepage
+    // dodan se mora biti seznam vseh userjev
+    // popravljeno more biti pojlje za dodajanje zanrov, da je dropdown
+    // en gumb in polje more biti za brisanje userjev po mailu
+    // more biti neko polje za brisanje knjige
+    // en gumb in polje za brisanje knjig po avtorju
 
     const handleBookChange = (e) => {
         setNewBook({ ...newBook, [e.target.name]: e.target.value });
@@ -63,7 +51,8 @@ const AdminPage = () => {
                 newBook,
                 { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
             );
-            setNewBook({ title: '', author: '', publishedYear: '', description: '', coverUrl: '' });
+            setNewBook({ title: '', author: '', genres: [], publishedYear: '', isbn: '',
+                description: '', coverUrl: '', averageRating: 0, ratingsCount: 0, pages: 0 });
             setError('');
             alert('Book added successfully!');
         } catch (err) {
@@ -74,7 +63,7 @@ const AdminPage = () => {
         }
     };
 
-    const handleDeleteReview = async (reviewId) => {
+    /*const handleDeleteReview = async (reviewId) => {
         if (!window.confirm('Are you sure you want to delete this review?')) return;
         try {
             await reviewApi.delete(`/reviews/${reviewId}`);
@@ -82,7 +71,7 @@ const AdminPage = () => {
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to delete review');
         }
-    };
+    };*/
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -115,6 +104,16 @@ const AdminPage = () => {
                         />
                     </label>
                     <label className="block mb-4">
+                        Genres (comma separated):
+                        <input
+                            type="text"
+                            name="genres"
+                            value={newBook.genres}
+                            onChange={(e) => setNewBook({ ...newBook, genres: e.target.value.split(',').map(g => g.trim()) })}
+                            className="w-full border rounded px-3 py-2 mt-1"
+                        />
+                    </label>
+                    <label className="block mb-4">
                         Published Year:
                         <input
                             type="number"
@@ -123,6 +122,16 @@ const AdminPage = () => {
                             onChange={handleBookChange}
                             className="w-full border rounded px-3 py-2 mt-1"
                             required
+                        />
+                    </label>
+                    <label className="block mb-4">
+                        ISBN:
+                        <input
+                            type="text"
+                            name="isbn"
+                            value={newBook.isbn}
+                            onChange={handleBookChange}
+                            className="w-full border rounded px-3 py-2 mt-1"
                         />
                     </label>
                     <label className="block mb-4">
@@ -147,6 +156,37 @@ const AdminPage = () => {
                             required
                         />
                     </label>
+                    <label className="block mb-4">
+                        Average Rating:
+                        <input
+                            type="number"
+                            step="0.1"
+                            name="averageRating"
+                            value={newBook.averageRating}
+                            onChange={handleBookChange}
+                            className="w-full border rounded px-3 py-2 mt-1"
+                        />
+                    </label>
+                    <label className="block mb-4">
+                        Ratings Count:
+                        <input
+                            type="number"
+                            name="ratingsCount"
+                            value={newBook.ratingsCount}
+                            onChange={handleBookChange}
+                            className="w-full border rounded px-3 py-2 mt-1"
+                        />
+                    </label>
+                    <label className="block mb-4">
+                        Pages:
+                        <input
+                            type="number"
+                            name="pages"
+                            value={newBook.pages}
+                            onChange={handleBookChange}
+                            className="w-full border rounded px-3 py-2 mt-1"
+                        />
+                    </label>
                     <button
                         type="submit"
                         className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
@@ -156,7 +196,7 @@ const AdminPage = () => {
                 </form>
             </section>
 
-            <section className="mb-10">
+            {/*<section className="mb-10">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">Manage Reviews</h2>
                 {reviews.length > 0 ? (
                     <div className="grid gap-4">
@@ -178,7 +218,7 @@ const AdminPage = () => {
                 ) : (
                     <p className="text-gray-600">No reviews available.</p>
                 )}
-            </section>
+            </section>*/}
         </div>
     );
 };

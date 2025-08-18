@@ -5,7 +5,7 @@ import { bookApi } from "../api";
 const BookDetailsPage = () => {
     const { id } = useParams();
     const [book, setBook] = useState(null);
-    const [reviews, setReviews] = useState([]);
+    //const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -14,11 +14,11 @@ const BookDetailsPage = () => {
             try {
                 // 📚 Detajli knjige
                 const bookRes = await bookApi.get(`/${id}`);
-                setBook(bookRes.data);
+                setBook(bookRes.data.book);
 
                 // ⭐ Reviewi
-                const reviewRes = await bookApi.get(`/${id}/reviews`);
-                setReviews(reviewRes.data.reviews || []);
+                /*const reviewRes = await bookApi.get(`/${id}/reviews`);
+                setReviews(reviewRes.data.reviews || []);*/
 
             } catch (err) {
                 console.error("Error fetching book details:", err);
@@ -52,7 +52,7 @@ const BookDetailsPage = () => {
             </div>
 
             {/* ⭐ Reviews section */}
-            <div className="mt-10">
+            {/*<div className="mt-10">
                 <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
                 {reviews.length > 0 ? (
                     <div className="space-y-4">
@@ -67,7 +67,7 @@ const BookDetailsPage = () => {
                 ) : (
                     <p className="text-gray-600">No reviews yet. Be the first to review!</p>
                 )}
-            </div>
+            </div>*/}
         </div>
     );
 };

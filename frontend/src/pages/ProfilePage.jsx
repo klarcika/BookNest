@@ -42,10 +42,6 @@ const ProfilePage = () => {
                     currentlyReading: shelfData.currentlyReading || [],
                     read: shelfData.read || [],
                 });
-
-                // ???????
-                /*const booksRes = await bookApi.get('/');
-                setBooks(booksRes?.data || []);*/
             } catch (err) {
                 setError(err?.response?.data?.error || 'Failed to fetch data');
                 if (err?.response?.status === 401 || err?.response?.status === 403) {
