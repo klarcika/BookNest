@@ -35,7 +35,6 @@ const ProfilePage = () => {
                     { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
                 );
 
-                console.log('shelves: ', shelvesRes?.data[0]?.shelves);
                 const shelfData = shelvesRes?.data?.[0]?.shelves || { wantToRead: [], currentlyReading: [], read: [] };
                 console.log(shelfData);
                 setBookshelves({
