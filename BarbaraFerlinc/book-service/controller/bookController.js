@@ -113,7 +113,29 @@ async function findBook(req, res) {
     if (!book) {
       return res.status(404).json({ error: "Book does not exist" });
     }
-    res.status(200).json(book);
+
+    const contentInfoRes = await fetch(process.env.CONTENT_NOTICES_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ title: book.title, description: book.description })
+    });
+    const contentInfo = await contentInfoRes.json();
+
+    const bookBadgesRes = await fetch(process.env.BOOK_BADGES_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ 
+        title: book.title, 
+        genres: book.genres, 
+        pages: book.pages,
+        averageRating: book.averageRating, 
+        ratingsCount: book.ratingsCount, 
+        publishedYear: book.publishedYear
+      })
+    });
+    const bookBadges = await bookBadgesRes.json();
+
+    res.status(200).json({ book: book, contentInfo: contentInfo, bookBadges: bookBadges });
   } catch (error) {
     res.status(500).json({ details: error.message });
   }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userApi, bookApi, bookshelfApi, reviewApi } from '../api';
+import { userApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
@@ -35,7 +35,6 @@ const ProfilePage = () => {
                     { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
                 );
 
-                console.log('shelves: ', shelvesRes?.data[0]?.shelves);
                 const shelfData = shelvesRes?.data?.[0]?.shelves || { wantToRead: [], currentlyReading: [], read: [] };
                 console.log(shelfData);
                 setBookshelves({
@@ -53,14 +52,6 @@ const ProfilePage = () => {
                     localStorage.removeItem('jwtToken');
                     navigate('/login');
                 }
-                /*if (err?.response?.status === 401) {
-                    try {
-                        //await userApi.post('/refresh-token');
-                        await fetchData(); // retry
-                    } catch {
-                        navigate('/login');
-                    }
-                }*/
             }
         };
         fetchData();
@@ -117,14 +108,17 @@ const ProfilePage = () => {
 
     const handleChallengeSubmit = async () => {
         if (!challengeInput || isNaN(challengeInput)) return;
-        const newChallenge = { goal: parseInt(challengeInput), completed: 0 };
         try {
-            //await userApi.patch('/me', { readingChallenge: newChallenge });
-            setReadingChallenge(newChallenge);
+            await statisticApi.post(
+                '/goals',
+                { userId: user._id, targetBooks: parseInt(challengeInput) },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+            );
+            setReadingChallenge({ goal: parseInt(challengeInput), completed: 0 });
             setShowChallengeForm(false);
             setChallengeInput('');
-        } catch {
-            setError('Failed to set challenge');
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to set challenge');
         }
     };
 
@@ -201,6 +195,13 @@ const ProfilePage = () => {
                     Logout
                 </button>
             </div>
+            <button
+                onClick={() => navigate(`/notifications/${user._id}`)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded mt-4"
+            >
+                🔔 Poglej obvestila
+            </button>
+
 
             <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
 
@@ -212,11 +213,12 @@ const ProfilePage = () => {
                 <div className="mt-6 flex items-center gap-6">
                     {readingChallenge?.goal ? (
                         <div className="flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
+                            <div
+                                className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
                                 {readingChallenge.completed}/{readingChallenge.goal}
                             </div>
                             <button
-                                onClick={() => setReadingChallenge({ goal: null, completed: 0 })}
+                                onClick={() => setReadingChallenge({goal: null, completed: 0})}
                                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
                             >
                                 Reset
@@ -253,17 +255,20 @@ const ProfilePage = () => {
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">✅ Read</h2>
-                {bookshelves?.read?.length ? renderBooks(bookshelves.read, 'read') : <p className="text-gray-600">No books read yet.</p>}
+                {bookshelves?.read?.length ? renderBooks(bookshelves.read, 'read') :
+                    <p className="text-gray-600">No books read yet.</p>}
             </section>
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📖 Currently Reading</h2>
-                {bookshelves?.currentlyReading?.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') : <p className="text-gray-600">No books currently reading.</p>}
+                {bookshelves?.currentlyReading?.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') :
+                    <p className="text-gray-600">No books currently reading.</p>}
             </section>
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📚 Want to Read</h2>
-                {bookshelves?.wantToRead?.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') : <p className="text-gray-600">No books in wishlist.</p>}
+                {bookshelves?.wantToRead?.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') :
+                    <p className="text-gray-600">No books in wishlist.</p>}
             </section>
         </div>
     );

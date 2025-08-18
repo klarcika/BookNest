@@ -17,7 +17,7 @@ class GoalTargetIn(BaseModel):
     targetBooks: int = Field(..., ge=1, example=12)
 
 class GoalAddBookIn(BaseModel):
-    userId: str = Field(..., min_length=1, example="u1")
+    # userId: str = Field(..., min_length=1, example="u1")
     book: BookRef = Field(..., description="Book to add to the goal")
 
 class GoalRemoveBookIn(BaseModel):

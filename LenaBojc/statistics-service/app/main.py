@@ -1,13 +1,16 @@
 import os
 import httpx
+import jwt
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from bson import ObjectId
 from collections import Counter
 from pymongo import ReturnDocument
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 # from pymongo.mongo_client import MongoClient
 # from pymongo.server_api import ServerApi
@@ -17,11 +20,32 @@ load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 DB_NAME = os.getenv("DB_NAME")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 SHELVES_API_URL = os.getenv("SHELVES_API_URL")
 FEATURE_FLAGS_URL = os.getenv("FEATURE_FLAGS_URL")
 
 app = FastAPI(title="Statistics Service", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
 # ----- Startup/Shutdown -----
 
@@ -128,6 +152,16 @@ def _rb_to_out(d: dict) -> ReadBookOut:
                 }
             }
         },
+        403: {
+            "description": "Forbidden",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "You do not have permission to create this goal"
+                    }
+                }
+            }
+        },
         409: {
             "description": "Goal for this user and year already exists",
             "content": {
@@ -151,7 +185,13 @@ def _rb_to_out(d: dict) -> ReadBookOut:
     },
     name="createUserGoal",
 )
-async def create_user_goal(body: GoalIn):
+async def create_user_goal(body: GoalIn, request: Request, user=Depends(verify_token)):
+    if body.userId != user["user_id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to create this goal",
+        )
+
     year = datetime.now(timezone.utc).year
 
     doc = {
@@ -183,9 +223,13 @@ async def create_user_goal(body: GoalIn):
         ins = await coll.insert_one(doc)                        
         created = await coll.find_one({"_id": ins.inserted_id}) 
         out = _to_out(created)
-        
+
+        auth_header = request.headers.get("Authorization")
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{SHELVES_API_URL}/shelves/{body.userId}/read/books")
+            resp = await client.get(
+                f"{SHELVES_API_URL}/shelves/{body.userId}/read/books",
+                headers={"Authorization": auth_header} if auth_header else None
+            )
             if resp.status_code == 200:
                 books = resp.json()
                 filtered_books = [
@@ -269,6 +313,16 @@ async def create_user_goal(body: GoalIn):
                 }
             }
         },
+        403: {
+            "description": "Forbidden",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "You do not have permission to move from this goal"
+                    }
+                }
+            }
+        },
         409: {
             "description": "Duplicate entry for this (userId, bookId)",
             "content": {
@@ -288,7 +342,13 @@ async def create_user_goal(body: GoalIn):
     },
     name="logReadBook",
 )
-async def log_read_book(body: ReadBookIn):
+async def log_read_book(body: ReadBookIn, user=Depends(verify_token)):
+    if body.userId != user["user_id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to to move from this goal",
+        )
+    
     coll = app.mongodb[COLLECTION_NAME]
 
     src_oid = None
@@ -307,11 +367,6 @@ async def log_read_book(body: ReadBookIn):
             src = await coll.find_one({"_id": src_oid, "type": "userGoal"})
             if not src:
                 return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Source goal not found"})
-            if src.get("userId") != body.userId:
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={"message": "Forbidden: goal belongs to a different user"},
-                )
         except Exception:
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -403,6 +458,14 @@ async def log_read_book(body: ReadBookIn):
                 }
             }
         },
+        403: {
+            "description": "Forbidden (user does not have permission)",
+            "content": {
+                "application/json": {
+                    "example": {"message": "Forbidden: you do not have permission to change this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal not found",
             "content": {
@@ -422,7 +485,7 @@ async def log_read_book(body: ReadBookIn):
     },
     name="changeUserGoal",
 )
-async def change_user_goal(id: str, body: GoalTargetIn):
+async def change_user_goal(id: str, body: GoalTargetIn, user=Depends(verify_token)):    
     try:
         oid = ObjectId(id)
     except Exception:
@@ -435,6 +498,18 @@ async def change_user_goal(id: str, body: GoalTargetIn):
         )
 
     coll = app.mongodb[COLLECTION_NAME]
+    
+    goal = await coll.find_one({"_id": oid, "type": "userGoal"})
+    if not goal:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"message": "Goal not found"},
+        )
+    if goal.get("userId") != user["user_id"]:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"message": "You do not have permission to change this goal"},
+        )
 
     try:
         updated = await coll.find_one_and_update(
@@ -446,12 +521,6 @@ async def change_user_goal(id: str, body: GoalTargetIn):
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"message": "Internal server error while updating goal"},
-        )
-
-    if not updated:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"message": "Goal not found"},
         )
 
     return {
@@ -547,7 +616,7 @@ async def change_user_goal(id: str, body: GoalTargetIn):
     },
     name="addBookToGoal",
 )
-async def add_book_to_goal(id: str, body: GoalAddBookIn):
+async def add_book_to_goal(id: str, body: GoalAddBookIn, user=Depends(verify_token)):
     try:
         oid = ObjectId(id)
     except Exception:
@@ -565,7 +634,7 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
         goal = await coll.find_one({"_id": oid, "type": "userGoal"})
         if not goal:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Goal not found"})
-        if goal.get("userId") != body.userId:
+        if goal.get("userId") != user["user_id"]:
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"message": "Forbidden: goal belongs to a different user"},
@@ -646,6 +715,14 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
                 }
             }
         },
+        403: {
+            "description": "User does not have permission to view this goal",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to view this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal not found for this user",
             "content": {
@@ -666,6 +743,12 @@ async def add_book_to_goal(id: str, body: GoalAddBookIn):
     name="goalByUserId",
 )
 async def get_goal_by_userid(userId: str):
+    # if userId != user["user_id"]:
+    #     return JSONResponse(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         content={"message": "You do not have permission to view this goal"},
+    #     )
+    
     coll = app.mongodb[COLLECTION_NAME]
     year = datetime.now(timezone.utc).year
 
@@ -741,6 +824,14 @@ async def get_goal_by_userid(userId: str):
                 }
             }
         },
+        403: {
+            "description": "User does not have permission to view this goal",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to view this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal not found",
             "content": {
@@ -779,6 +870,12 @@ async def read_pages_in_goal(id: str):
         if not goal:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "Goal not found"})
 
+        # if goal.get("userId") != user["user_id"]:
+        #     return JSONResponse(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         content={"message": "You do not have permission to view this goal"},
+        #     )
+
         total_pages = sum(book.get("pages", 0) for book in goal.get("books", []))
 
         return {
@@ -816,6 +913,14 @@ async def read_pages_in_goal(id: str):
                 }
             }
         },
+        403: {
+            "description": "User does not have permission to view this goal",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to view this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal not found for this user in the current year, or no books/genres present",
             "content": {
@@ -845,6 +950,12 @@ async def read_pages_in_goal(id: str):
     name="bookGenresComparison",
 )
 async def book_genres_comparison(userId: str):
+    # if userId != user["user_id"]:
+    #     return JSONResponse(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         content={"message": "You do not have permission to view this goal"},
+    #     )
+
     year = datetime.now(timezone.utc).year
     coll = app.mongodb[COLLECTION_NAME]
 
@@ -922,6 +1033,14 @@ async def book_genres_comparison(userId: str):
                 }
             }
         },
+        403: {
+            "description": "User does not have permission to view this goal",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to view this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal or book not found",
             "content": {
@@ -941,7 +1060,7 @@ async def book_genres_comparison(userId: str):
     },
     name="removeBookFromGoal",
 )
-async def remove_book_from_goal(id: str, body: GoalRemoveBookIn):
+async def remove_book_from_goal(id: str, body: GoalRemoveBookIn, user=Depends(verify_token)):
     try:
         oid = ObjectId(id)
     except Exception:
@@ -961,6 +1080,11 @@ async def remove_book_from_goal(id: str, body: GoalRemoveBookIn):
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={"message": "Goal or book not found"},
+            )
+        if goal.get("userId") != user["user_id"]:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"message": "You do not have permission to view this goal"},
             )
 
         updated = await coll.find_one_and_update(
@@ -1011,6 +1135,14 @@ async def remove_book_from_goal(id: str, body: GoalRemoveBookIn):
                 }
             }
         },
+        403: {
+            "description": "User does not have permission to delete this goal",
+            "content": {
+                "application/json": {
+                    "example": {"message": "You do not have permission to delete this goal"}
+                }
+            }
+        },
         404: {
             "description": "Goal not found",
             "content": {
@@ -1030,9 +1162,7 @@ async def remove_book_from_goal(id: str, body: GoalRemoveBookIn):
     },
     name="removeGoal",
 )
-async def remove_goal(id: str):
-    from bson import ObjectId
-
+async def remove_goal(id: str, user=Depends(verify_token)):
     try:
         oid = ObjectId(id)
     except Exception:
@@ -1047,13 +1177,19 @@ async def remove_goal(id: str):
     coll = app.mongodb[COLLECTION_NAME]
 
     try:
-        result = await coll.delete_one({"_id": oid, "type": "userGoal"})
-        if result.deleted_count == 0:
+        goal = await coll.find_one({"_id": oid, "type": "userGoal"})
+        if not goal:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={"message": "Goal not found"},
             )
+        if goal.get("userId") != user["user_id"]:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"message": "You do not have permission to delete this goal"},
+            )
 
+        result = await coll.delete_one({"_id": oid, "type": "userGoal"})
         return {"message": "Goal deleted successfully"}
     except Exception:
         return JSONResponse(

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -24,10 +24,10 @@ const Navbar = () => {
             <div className="flex gap-8">
                 <NavLink to="/" className={linkClass}>Home</NavLink>
                 {userId && (
-                    <NavLink to="/recommendations" className={linkClass}>Recommendations</NavLink>
+                    <NavLink to={`/recommendations/${userId}`} className={linkClass}>Recommendations</NavLink>
                 )}
                 {userId && (
-                    <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
+                    <NavLink to={`/notifications/${userId}`} className={linkClass}>Notifications</NavLink>
                 )}
             </div>
 
@@ -40,6 +40,7 @@ const Navbar = () => {
                 )}
             </div>
         </nav>
-    )
+    );
 }
+
 export default Navbar;
