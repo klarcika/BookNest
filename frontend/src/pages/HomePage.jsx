@@ -66,16 +66,16 @@ const HomePage = () => {
         ? books.filter(book => book.genres?.some(g => g.toLowerCase() === genreFilter.toLowerCase()))
         : books;
 
-    const handleAddToWantToRead = async (bookKey) => {
-        if (!userId || wantToRead.includes(bookKey)) return;
+    const handleAddToWantToRead = async (bookId) => { // spremenil bookKey → bookId
+        if (!userId || wantToRead.includes(bookId)) return;
 
         try {
             await bookshelfApi.put(
                 `/${userId}/wantToRead`,
-                { bookKey },
+                { bookId }, // ⚠️ tu mora biti bookId
                 { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
             );
-            setWantToRead(prev => [...prev, bookKey]);
+            setWantToRead(prev => [...prev, bookId]);
         } catch (err) {
             setError(err?.response?.data?.error || 'Failed to add book');
             if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -115,9 +115,9 @@ const HomePage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {filteredBooks.map((book, index) => (
+                {filteredBooks.map((book) => (
                     <BookCard
-                        key={book.index}
+                        key={book._id} // 🔑 popravljeno
                         book={book}
                         added={wantToRead.includes(book._id)}
                         onAddToWantToRead={() => handleAddToWantToRead(book._id)}
@@ -125,6 +125,7 @@ const HomePage = () => {
                         userId={userId}
                     />
                 ))}
+
 
 
             </div>

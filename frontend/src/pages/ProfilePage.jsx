@@ -18,25 +18,20 @@ const ProfilePage = () => {
 
     const shelfLabels = { wantToRead: 'Want to Read', currentlyReading: 'Currently Reading', read: 'Read' };
 
+    // Naloži uporabnika in police
     useEffect(() => {
         const fetchData = async () => {
-            console.log('id: ', id);
             try {
-                const userRes = await userApi.post('/id',
-                    { id: id },
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
-                );
+                const userRes = await userApi.post('/id', { id }, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` }
+                });
                 setUser(userRes?.data || { profile: { name: 'Unknown', bio: '' }, email: '' });
 
-                console.log('user: ', userRes?.data);
-
-                const shelvesRes = await bookshelfApi.get(
-                    `/?userId=${userRes?.data?._id}`,
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
-                );
+                const shelvesRes = await bookshelfApi.get(`/?userId=${userRes?.data?._id}`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` }
+                });
 
                 const shelfData = shelvesRes?.data?.[0]?.shelves || { wantToRead: [], currentlyReading: [], read: [] };
-                console.log(shelfData);
                 setBookshelves({
                     wantToRead: shelfData.wantToRead || [],
                     currentlyReading: shelfData.currentlyReading || [],
@@ -51,42 +46,49 @@ const ProfilePage = () => {
             }
         };
         fetchData();
-    }, [navigate]);
+    }, [id, navigate]);
 
-    const getBook = (id) => books.find((b) => b?.id === id);
+    // Naloži vse knjige
+    useEffect(() => {
+        const fetchBooks = async () => {
+            try {
+                const res = await bookshelfApi.get('/', {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` }
+                });
+                setBooks(res.data || []);
+            } catch {
+                setError('Failed to load books');
+            }
+        };
+        fetchBooks();
+    }, []);
+
+    const getBook = (id) => books.find((b) => b?.id === id || b?._id === id);
 
     const handleMove = async (bookId, fromShelf, toShelf) => {
         if (fromShelf === toShelf) return;
-
         try {
             const updatedShelves = {
                 ...bookshelves,
                 [fromShelf]: bookshelves[fromShelf]?.filter((item) => item?.bookId !== bookId) || [],
                 [toShelf]: [
                     ...(bookshelves[toShelf] || []),
-                    {
-                        bookId,
-                        date: new Date().toISOString(),
-                    },
+                    { bookId, date: new Date().toISOString() },
                 ],
             };
 
-            await bookshelfApi.post(
-                `/${user?._id}/move`,
-                {
-                    from: fromShelf,
-                    to: toShelf,
-                    bookId,
-                    date: new Date().toISOString(),
-                },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
-            );
+            await bookshelfApi.post(`/${user?._id}/move`, {
+                from: fromShelf,
+                to: toShelf,
+                bookId,
+                date: new Date().toISOString(),
+            }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
 
             setBookshelves(updatedShelves);
 
             if (toShelf === 'read') {
                 setShowReviewFormFor(bookId);
-                setReadingChallenge((prev) => (prev?.goal ? { ...prev, completed: Math.min(prev.completed + 1, prev.goal) } : prev));
+                setReadingChallenge(prev => prev?.goal ? { ...prev, completed: Math.min(prev.completed + 1, prev.goal) } : prev);
             }
         } catch {
             setError('Failed to update bookshelf');
@@ -95,7 +97,11 @@ const ProfilePage = () => {
 
     const handleReviewSubmit = async (bookId) => {
         try {
-            await reviewApi.post('/reviews', { bookId, rating: reviews?.[bookId]?.rating, comment: reviews?.[bookId]?.comment });
+            await reviewApi.post('/reviews', {
+                bookId,
+                rating: reviews?.[bookId]?.rating,
+                comment: reviews?.[bookId]?.comment
+            });
             setShowReviewFormFor(null);
         } catch {
             setError('Failed to submit review');
@@ -105,11 +111,9 @@ const ProfilePage = () => {
     const handleChallengeSubmit = async () => {
         if (!challengeInput || isNaN(challengeInput)) return;
         try {
-            await statisticApi.post(
-                '/goals',
-                { userId: user._id, targetBooks: parseInt(challengeInput) },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
-            );
+            await statisticApi.post('/goals', { userId: user._id, targetBooks: parseInt(challengeInput) }, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` }
+            });
             setReadingChallenge({ goal: parseInt(challengeInput), completed: 0 });
             setShowChallengeForm(false);
             setChallengeInput('');
@@ -138,29 +142,23 @@ const ProfilePage = () => {
                                     Rating:
                                     <select
                                         className="ml-2 border px-1 py-0.5 rounded"
-                                        onChange={(e) =>
-                                            setReviews((prev) => ({
-                                                ...prev,
-                                                [item.bookId]: { ...prev[item.bookId], rating: e.target.value },
-                                            }))
-                                        }
+                                        onChange={(e) => setReviews(prev => ({
+                                            ...prev,
+                                            [item.bookId]: { ...prev[item.bookId], rating: e.target.value },
+                                        }))}
                                     >
                                         <option value="">Select</option>
-                                        {[1, 2, 3, 4, 5].map((n) => (
-                                            <option key={n} value={n}>{n} ⭐</option>
-                                        ))}
+                                        {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} ⭐</option>)}
                                     </select>
                                 </label>
                                 <textarea
                                     className="w-full border rounded px-2 py-1 mb-2"
                                     rows="3"
                                     placeholder="Write your thoughts..."
-                                    onChange={(e) =>
-                                        setReviews((prev) => ({
-                                            ...prev,
-                                            [item.bookId]: { ...prev[item.bookId], comment: e.target.value },
-                                        }))
-                                    }
+                                    onChange={(e) => setReviews(prev => ({
+                                        ...prev,
+                                        [item.bookId]: { ...prev[item.bookId], comment: e.target.value },
+                                    }))}
                                 />
                                 <button
                                     className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded"
@@ -191,13 +189,13 @@ const ProfilePage = () => {
                     Logout
                 </button>
             </div>
+
             <button
                 onClick={() => navigate(`/notifications/${user._id}`)}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded mt-4"
             >
                 🔔 Poglej obvestila
             </button>
-
 
             <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
 
@@ -209,8 +207,7 @@ const ProfilePage = () => {
                 <div className="mt-6 flex items-center gap-6">
                     {readingChallenge?.goal ? (
                         <div className="flex items-center gap-4">
-                            <div
-                                className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
+                            <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
                                 {readingChallenge.completed}/{readingChallenge.goal}
                             </div>
                             <button

@@ -17,12 +17,10 @@ export const bookshelfApi = axios.create({
 
 export const reviewApi = axios.create({
     baseURL: 'http://localhost:3002',
-    withCredentials: true,
 });
 
 export const statisticApi = axios.create({
     baseURL: 'http://localhost:3004',
-    withCredentials: true,
 })
 
 export const recommendationApi = axios.create({
@@ -34,24 +32,4 @@ export const notificationApi = axios.create({
     baseURL: 'http://localhost:3001/obvestila',
     withCredentials: true,
 });
-
-// Interceptor za osvežitev tokena
-/*[userApi, bookshelfApi, recommendationApi, notificationApi, reviewApi, bookApi].forEach((api) => {
-    api.interceptors.response.use(
-        (response) => response,
-        async (error) => {
-            if (error.response?.status === 401 && !error.config._retry) {
-                error.config._retry = true;
-                try {
-                    await userApi.post('/refresh-token');
-                    return api(error.config); // Ponovi originalni zahtevek
-                } catch (refreshErr) {
-                    window.location.href = '/login';
-                    return Promise.reject(refreshErr);
-                }
-            }
-            return Promise.reject(error);
-        }
-    );
-});*/
 
