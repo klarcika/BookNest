@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userApi, bookApi, bookshelfApi, reviewApi, statisticApi } from '../api';
+import { userApi, bookshelfApi, reviewApi, statisticApi } from '../api';
 import BookCardDetails from '../components/BookCardDetails';
 
 const ProfilePage = () => {
@@ -195,6 +195,13 @@ const ProfilePage = () => {
                     Logout
                 </button>
             </div>
+            <button
+                onClick={() => navigate(`/notifications/${user._id}`)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded mt-4"
+            >
+                🔔 Poglej obvestila
+            </button>
+
 
             <h1 className="text-3xl font-bold mb-6 text-purple-900 text-center">User Profile</h1>
 
@@ -206,11 +213,12 @@ const ProfilePage = () => {
                 <div className="mt-6 flex items-center gap-6">
                     {readingChallenge?.goal ? (
                         <div className="flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
+                            <div
+                                className="w-20 h-20 rounded-full border-4 border-purple-600 flex items-center justify-center text-lg font-bold text-purple-800">
                                 {readingChallenge.completed}/{readingChallenge.goal}
                             </div>
                             <button
-                                onClick={() => setReadingChallenge({ goal: null, completed: 0 })}
+                                onClick={() => setReadingChallenge({goal: null, completed: 0})}
                                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
                             >
                                 Reset
@@ -247,17 +255,20 @@ const ProfilePage = () => {
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">✅ Read</h2>
-                {bookshelves?.read?.length ? renderBooks(bookshelves.read, 'read') : <p className="text-gray-600">No books read yet.</p>}
+                {bookshelves?.read?.length ? renderBooks(bookshelves.read, 'read') :
+                    <p className="text-gray-600">No books read yet.</p>}
             </section>
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📖 Currently Reading</h2>
-                {bookshelves?.currentlyReading?.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') : <p className="text-gray-600">No books currently reading.</p>}
+                {bookshelves?.currentlyReading?.length ? renderBooks(bookshelves.currentlyReading, 'currentlyReading') :
+                    <p className="text-gray-600">No books currently reading.</p>}
             </section>
 
             <section className="mb-10 max-w-6xl mx-auto">
                 <h2 className="text-2xl font-semibold text-purple-800 mb-4">📚 Want to Read</h2>
-                {bookshelves?.wantToRead?.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') : <p className="text-gray-600">No books in wishlist.</p>}
+                {bookshelves?.wantToRead?.length ? renderBooks(bookshelves.wantToRead, 'wantToRead') :
+                    <p className="text-gray-600">No books in wishlist.</p>}
             </section>
         </div>
     );

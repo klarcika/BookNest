@@ -1,124 +1,75 @@
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { bookApi, reviewApi } from "../api";
+import { useEffect, useState } from "react";
+import { bookApi } from "../api";
 
-const BookDetails = () => {
+const BookDetailsPage = () => {
     const { id } = useParams();
     const [book, setBook] = useState(null);
-    const [comments, setComments] = useState([]);
-    const [newComment, setNewComment] = useState("");
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const fetchBook = async () => {
+        const fetchBookAndReviews = async () => {
             try {
-                const response = await bookApi.get(`/${id}`);
-                setBook(response.data.book);
-                setComments(response.data.book.comments || []);
+                // 📚 Detajli knjige
+                const bookRes = await bookApi.get(`/${id}`);
+                setBook(bookRes.data);
+
+                // ⭐ Reviewi
+                const reviewRes = await bookApi.get(`/${id}/reviews`);
+                setReviews(reviewRes.data.reviews || []);
+
             } catch (err) {
-                setError(err.response?.data?.error || "Failed to fetch data");
-                if (err?.response?.status === 401 || err?.response?.status === 403) {
-                    localStorage.removeItem('jwtToken');
-                }
+                console.error("Error fetching book details:", err);
+                setError(err?.response?.data?.error || "Failed to load book details");
+            } finally {
+                setLoading(false);
             }
         };
-        fetchBook();
+
+        fetchBookAndReviews();
     }, [id]);
 
-    const handleAddComment = async () => {
-        if (!newComment.trim()) return;
-
-        try {
-            const response = await reviewApi.post("/", {
-                bookId: id,
-                userName: "Anonymous",
-                text: newComment,
-            });
-
-            setComments(prev => [
-                ...prev,
-                {
-                    _id: response.data._id || `comment-${prev.length}`,
-                    userName: "Anonymous",
-                    text: newComment,
-                },
-            ]);
-            setNewComment("");
-        } catch (err) {
-            setError(err.response?.data?.error || "Failed to add comment");
-        }
-    };
-
-    if (!book) return <p className="text-center mt-10">Loading book...</p>;
+    if (loading) return <p className="text-center mt-10">Loading...</p>;
+    if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
+    if (!book) return <p className="text-center mt-10">Book not found.</p>;
 
     return (
-        <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-6">
-            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-
-            {/* Book Info */}
-            <div className="flex flex-col md:flex-row gap-6">
-                {book.coverUrl && (
-                    <img
-                        src={book.coverUrl}
-                        alt={book.title}
-                        className="w-60 object-cover rounded"
-                    />
-                )}
-                <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-purple-900">{book.title}</h1>
-                    <p className="text-lg text-gray-700">{book.author}</p>
-                    <p className="text-md text-gray-500">{book.publishedYear}</p>
-                    {book.description && (
-                        <p className="mt-4 text-md">{book.description}</p>
-                    )}
-                    <p className="mt-2 text-yellow-600">
-                        ⭐ {book.averageRating || "No rating yet"}
-                    </p>
-                    {book.genres?.length > 0 && (
-                        <p className="mt-2 text-gray-600">
-                            <strong>Genres:</strong> {book.genres.join(", ")}
-                        </p>
-                    )}
+        <div className="max-w-4xl mx-auto p-6">
+            <div className="flex gap-6">
+                <img
+                    src={book.coverUrl || "https://via.placeholder.com/150x220"}
+                    alt={book.title}
+                    className="w-48 h-72 object-cover rounded-lg shadow"
+                />
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">{book.title}</h1>
+                    <p className="text-lg text-gray-700">by {book.author || "Unknown Author"}</p>
+                    <p className="text-sm text-gray-500 mb-4">{book.publishedYear || "N/A"}</p>
+                    <p className="text-gray-800">{book.description || "No description available."}</p>
                 </div>
             </div>
 
-            {/* Comments Section */}
-            <div className="mt-8">
-                <h2 className="text-2xl font-semibold text-purple-800 mb-4">Comments</h2>
-
-                {comments.length > 0 ? (
-                    comments.map((c, idx) => (
-                        <div
-                            key={c._id || idx}
-                            className="bg-purple-50 p-3 rounded mb-2"
-                        >
-                            <p className="font-semibold">{c.userName || "Anonymous"}</p>
-                            <p>{c.text}</p>
-                        </div>
-                    ))
+            {/* ⭐ Reviews section */}
+            <div className="mt-10">
+                <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
+                {reviews.length > 0 ? (
+                    <div className="space-y-4">
+                        {reviews.map((review, idx) => (
+                            <div key={idx} className="p-4 border rounded-lg shadow-sm">
+                                <p className="font-semibold">{review.userName || "Anonymous"}</p>
+                                <p className="text-yellow-500">Rating: {review.rating || 0}/5</p>
+                                <p className="text-gray-700">{review.comment || "No comment."}</p>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
-                    <p className="text-gray-600">No comments yet.</p>
+                    <p className="text-gray-600">No reviews yet. Be the first to review!</p>
                 )}
-
-                {/* Add Comment */}
-                <div className="mt-4">
-                    <textarea
-                        className="w-full border rounded px-2 py-1 mb-2"
-                        rows="3"
-                        placeholder="Write your comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <button
-                        onClick={handleAddComment}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
-                    >
-                        Add Comment
-                    </button>
-                </div>
             </div>
         </div>
     );
 };
 
-export default BookDetails;
+export default BookDetailsPage;

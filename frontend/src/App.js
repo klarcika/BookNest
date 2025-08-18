@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import BookDetails from "./components/BookDetails";
 import AdminPage from "./pages/AdminPage";
 
+
 const App = () => {
     return (
         <Router>
@@ -20,8 +21,8 @@ const App = () => {
                     <Routes>
                         <Route path="/" element={<HomePage/>}/>
                         <Route path="/book/:id" element={<BookDetails/>}/>
-                        <Route path="/notifications" element={<NotificationsPage/>}/>
-                        <Route path="/recommendations" element={<RecommendationsPage/>}/>
+                        <Route path="/notifications/:id" element={<NotificationsPage />} />
+                        <Route path="/recommendations/:id" element={<RecommendationsPage/>}/>
                         <Route path="/profile/:id" element={<ProfilePage/>}/>
                         <Route path="/login" element={<LoginPage/>}/>
                         <Route path="/register" element={<RegisterPage/>}/>
